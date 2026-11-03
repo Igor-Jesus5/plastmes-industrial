@@ -1,0 +1,663 @@
+/* ==========================================================================
+   TABLET.CSS - Interface Chão de Fábrica Kiosk 10" (Setor 1, 2 e 3)
+   Ergonomia Industrial: Botões >= 64px, Teclado Numérico Nativo Pop-up
+   ========================================================================== */
+
+/* Container da Simulação do Tablet */
+.tablet-kiosk-wrapper {
+  background: #020617;
+  border: 12px solid #1e293b;
+  border-radius: 28px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 0, 0, 0.6);
+  min-height: 780px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Barra Superior do Kiosk */
+.kiosk-top-bar {
+  background: #0f172a;
+  border-bottom: 2px solid #1e293b;
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.kiosk-machine-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.kiosk-machine-badge {
+  background: #0284c7;
+  color: white;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-md);
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.kiosk-sector-indicator {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.kiosk-sector-indicator strong {
+  color: var(--text-primary);
+}
+
+.kiosk-status-pill {
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--radius-full);
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Cores de Alto Contraste Kiosk */
+.kiosk-status-pill.produzindo {
+  background: var(--andon-green);
+  color: #052e16;
+  box-shadow: 0 0 20px var(--andon-green-glow);
+}
+
+.kiosk-status-pill.setup {
+  background: var(--andon-yellow);
+  color: #422006;
+  box-shadow: 0 0 20px var(--andon-yellow-glow);
+}
+
+.kiosk-status-pill.parada {
+  background: var(--andon-red);
+  color: #450a0a;
+  box-shadow: 0 0 20px var(--andon-red-glow);
+}
+
+.kiosk-status-pill.chamado {
+  background: var(--andon-blue);
+  color: #082f49;
+  box-shadow: 0 0 20px var(--andon-blue-glow);
+  animation: pulseBlue 1.5s infinite;
+}
+
+/* Seletor de Máquina no topo para fins de demonstração/supervisão */
+.kiosk-machine-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #1e293b;
+  border-radius: var(--radius-md);
+  padding: 0.25rem 0.5rem;
+}
+
+.kiosk-select {
+  background: transparent;
+  border: none;
+  color: white;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.5rem;
+  outline: none;
+  cursor: pointer;
+}
+
+/* Área de Trabalho Principal do Tablet */
+.kiosk-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem;
+  gap: 1.25rem;
+  background: #030712;
+  overflow-y: auto;
+}
+
+/* Linha de Dados da OP Ativa */
+.kiosk-op-banner {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-left: 6px solid #38bdf8;
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.kiosk-op-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.kiosk-op-code {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.kiosk-op-product {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.kiosk-op-client {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* Ação de Troca / Busca de OP */
+.btn-kiosk-op-search {
+  min-height: 48px;
+  padding: 0 1.25rem;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: var(--radius-md);
+  color: white;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.btn-kiosk-op-search:hover {
+  background: #334155;
+}
+
+/* ==========================================================================
+   MÓDULO CORTE E SOLDA - DETALHAMENTO DO CHÃO DE FÁBRICA
+   ========================================================================== */
+
+/* Chave Seletora Pista Simples / Pista Dupla */
+.lane-toggle-card {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.lane-toggle-label {
+  display: flex;
+  flex-direction: column;
+}
+
+.lane-toggle-label span {
+  font-weight: 700;
+  font-size: 1rem;
+  color: white;
+}
+
+.lane-toggle-label small {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.toggle-switch-pista {
+  display: flex;
+  background: #1e293b;
+  padding: 4px;
+  border-radius: var(--radius-full);
+  gap: 4px;
+}
+
+.lane-btn-option {
+  padding: 0.65rem 1.25rem;
+  min-height: 48px;
+  border-radius: var(--radius-full);
+  border: none;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  background: transparent;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.lane-btn-option.active {
+  background: #0284c7;
+  color: white;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
+}
+
+/* Grid de Bobinas da Corte e Solda (1 ou 2 cards independentes) */
+.cut-lanes-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  transition: all 0.3s ease;
+}
+
+.cut-lanes-container.pista-dupla {
+  grid-template-columns: 1fr 1fr;
+}
+
+.coil-input-card {
+  background: #0f172a;
+  border: 2px solid #1e293b;
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  position: relative;
+}
+
+.coil-input-card.coil-active {
+  border-color: #0284c7;
+}
+
+.coil-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid #1e293b;
+}
+
+.coil-title-badge {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.coil-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+.coil-detail-item {
+  background: #1e293b;
+  padding: 0.65rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+}
+
+.coil-detail-item label {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.coil-detail-item strong {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: white;
+}
+
+/* Botão de Troca / Conclusão de Bobina Individual */
+.btn-coil-action {
+  min-height: var(--kiosk-touch-min); /* 64px para luvas */
+  background: #334155;
+  border: 1px solid #475569;
+  border-radius: var(--radius-md);
+  color: white;
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.btn-coil-action:hover {
+  background: #475569;
+  border-color: #64748b;
+}
+
+/* ==========================================================================
+   CONTADOR GIGANTE & BOTÃO +1 PACOTE (500 UNIDADES)
+   ========================================================================== */
+
+.counter-production-panel {
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+  border: 2px solid #334155;
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.counter-stats-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.counter-stat-box {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-md);
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.counter-stat-box label {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.counter-stat-box .count-big {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #22c55e;
+  line-height: 1.1;
+}
+
+.counter-actions-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+/* Botão Gigante de Pacote (+1 Pacote 500 un) */
+.btn-huge-pack {
+  min-height: 80px; /* Área de toque ultra ampla */
+  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+  border: none;
+  border-radius: var(--radius-lg);
+  color: white;
+  font-size: 1.35rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+  transition: transform 0.1s ease, filter 0.1s ease;
+  user-select: none;
+}
+
+.btn-huge-pack:active {
+  transform: scale(0.97);
+  filter: brightness(0.9);
+}
+
+.btn-kiosk-scrap {
+  min-height: 80px;
+  background: #7f1d1d;
+  border: 1px solid #991b1b;
+  border-radius: var(--radius-lg);
+  color: #fecaca;
+  font-size: 1rem;
+  font-weight: 800;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.btn-kiosk-scrap:hover {
+  background: #991b1b;
+}
+
+.btn-kiosk-quality {
+  min-height: 80px;
+  background: #1e3a8a;
+  border: 1px solid #2563eb;
+  border-radius: var(--radius-lg);
+  color: #bfdbfe;
+  font-size: 1rem;
+  font-weight: 800;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.btn-kiosk-quality:hover {
+  background: #2563eb;
+}
+
+/* ==========================================================================
+   CENTRAL DE CHAMADOS ANDON DIGITAL (BOTÕES DIRETOS >= 64px)
+   ========================================================================== */
+
+.kiosk-andon-panel {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.andon-panel-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  justify-content: space-between;
+}
+
+.andon-buttons-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem;
+}
+
+.btn-andon-call {
+  min-height: var(--kiosk-touch-min); /* 64px */
+  border-radius: var(--radius-md);
+  border: 2px solid;
+  font-size: 0.95rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.btn-andon-call.preparador {
+  background: rgba(234, 179, 8, 0.12);
+  border-color: #eab308;
+  color: #facc15;
+}
+.btn-andon-call.preparador:hover {
+  background: rgba(234, 179, 8, 0.25);
+}
+
+.btn-andon-call.manutencao {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: #ef4444;
+  color: #f87171;
+}
+.btn-andon-call.manutencao:hover {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+.btn-andon-call.qualidade {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: #3b82f6;
+  color: #60a5fa;
+}
+.btn-andon-call.qualidade:hover {
+  background: rgba(59, 130, 246, 0.25);
+}
+
+/* ==========================================================================
+   SETOR 1: EXTRUSÃO (ZONAS DE TEMPERATURA E RESINA)
+   ========================================================================== */
+
+.zones-temp-container {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.75rem;
+}
+
+.temp-zone-box {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.temp-zone-box.zone-ok {
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+.temp-zone-name {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.temp-zone-val {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #38bdf8;
+}
+
+.temp-zone-target {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   TECLADO NUMÉRICO POP-UP NATIVO (SEM TECLADO DO OS)
+   Botões grandes para dedos com luvas/graxa
+   ========================================================================== */
+
+.numeric-keypad-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.numeric-keypad-modal {
+  background: #0f172a;
+  border: 2px solid #38bdf8;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 420px;
+  padding: 1.5rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(56, 189, 248, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.keypad-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.keypad-header h4 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.keypad-display {
+  background: #020617;
+  border: 2px solid #334155;
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  font-size: 2rem;
+  font-weight: 800;
+  text-align: right;
+  color: #38bdf8;
+  min-height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.keypad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.keypad-btn {
+  min-height: 64px; /* Ergonomia Luvas */
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: var(--radius-md);
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-fast);
+}
+
+.keypad-btn:active {
+  background: #38bdf8;
+  color: #020617;
+}
+
+.keypad-btn.btn-clear {
+  background: #7f1d1d;
+  border-color: #991b1b;
+  color: #fecaca;
+  font-size: 1rem;
+}
+
+.keypad-btn.btn-confirm {
+  background: #16a34a;
+  border-color: #22c55e;
+  color: white;
+  font-size: 1.1rem;
+  grid-column: span 3;
+}

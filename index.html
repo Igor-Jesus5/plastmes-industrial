@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PlastMES Industrial - Sistema MES para Embalagens Plásticas Flexíveis</title>
+  
+  <!-- Configurações PWA & Modo Kiosk -->
+  <meta name="theme-color" content="#080d16">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Estilos Modulares -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/tablet.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+  <div id="app">
+    <!-- ====================================================================
+         CABEÇALHO INDUSTRIAL SUPERIOR (EDGE LOCAL + CLOUD SYNC DUAL)
+         ==================================================================== -->
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="brand-logo-badge icon-svg" style="color: white;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M17 18h1"/><path d="M12 18h1"/><path d="M7 18h1"/></svg>
+        </div>
+        <div class="brand-title">
+          <h1>PLASTMES INDUSTRIAL</h1>
+          <p>
+            <span>MES & Edge Computing de Chão de Fábrica</span>
+            <span class="badge-pwa-local">LOCAL-FIRST</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Indicador de Rede Dual (Edge Mini-PC Local vs Cloud Sync) -->
+      <div class="dual-sync-pill" id="dualSyncPill" title="Clique para alternar modo Online/Offline e testar a resiliência">
+        <div class="sync-node">
+          <span class="sync-dot"></span>
+          <span class="icon-svg" style="color: var(--text-secondary);"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg></span>
+          <span>Edge Local (192.168.1.100)</span>
+        </div>
+        <span class="sync-separator">|</span>
+        <div class="sync-node">
+          <span class="sync-dot pulse" id="cloudSyncDot"></span>
+          <span class="icon-svg" id="cloudSyncIcon" style="color: var(--text-secondary);"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg></span>
+          <span id="cloudSyncLabel">Nuvem Espelhada</span>
+          <span class="badge-pwa-local" id="syncPendingBadge" style="display:none; background: rgba(234, 179, 8, 0.2); color: #facc15; border-color: #eab308;">0 retidos</span>
+        </div>
+      </div>
+
+      <!-- Relógio da Fábrica e Ações -->
+      <div class="header-actions">
+        <div class="plant-clock">
+          <div class="time font-mono" id="plantClockTime">13:15:00</div>
+          <div class="shift" id="plantClockShift"><span class="dot-status-inline"></span> Turno 1 (06h - 14h)</div>
+        </div>
+
+        <button class="btn-icon active" id="btnToggleSim" title="Simulação em Tempo Real Ativa">
+          <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
+        </button>
+
+        <button class="btn-icon active" id="btnToggleAudio" title="Efeitos Sonoros Industriais Ativos">
+          <span class="icon-svg" id="audioIconContainer"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ====================================================================
+         BARRA DE NAVEGAÇÃO ENTRE MÓDULOS
+         ==================================================================== -->
+    <nav class="nav-tabs-bar">
+      <button class="nav-tab-btn active" data-tab="dashboard">
+        <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span>
+        <span>Portal Executivo (Dono & Balanço de Massa)</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="supervisor">
+        <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+        <span>Painel do Supervisor & Preparador</span>
+        <span class="tab-badge" id="supervisorTabAlertBadge">2</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="tablet">
+        <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><line x1="12" x2="12.01" y1="18" y2="18"/></svg></span>
+        <span>Terminal Tablet 10" (Chão de Fábrica)</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="ops">
+        <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg></span>
+        <span>OPs & Fichas Técnicas (Administrativo)</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="copilot">
+        <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></span>
+        <span>Copiloto IA (PlastIA)</span>
+      </button>
+    </nav>
+
+    <!-- ====================================================================
+         CONTAINER PRINCIPAL DAS TELAS
+         ==================================================================== -->
+    <main class="main-view-container">
+
+      <!-- ================================================================
+           ABA 1: DASHBOARD EXECUTIVO & PORTAL DO DONO
+           ================================================================ -->
+      <section class="tab-pane active" id="pane-dashboard">
+        <div class="dashboard-header-bar">
+          <div class="dashboard-title">
+            <h2>Visão Geral do Parque Industrial & Rendimento</h2>
+            <p>Monitoramento em tempo real do fluxo de massa, OEE e eficiência por operador</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn-secondary" onclick="App.showToast('Relatório executivo exportado com sucesso!', 'success')">
+              <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg></span>
+              <span>Exportar Relatório Turno</span>
+            </button>
+            <button class="btn-primary" onclick="App.switchTab('copilot')">
+              <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg></span>
+              <span>Diagnóstico com PlastIA</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 5.3 BALANÇO DE MASSA E KPIS GLOBAIS -->
+        <div class="mass-balance-container">
+          <div class="section-tag">
+            <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg></span>
+            <span>BALANÇO DE MASSA & RENDIMENTO DA RESINA PLÁSTICA</span>
+          </div>
+          <div class="mass-balance-grid">
+            <div class="kpi-card kpi-resina">
+              <span class="kpi-label">
+                <span>Resina Entrada (Extrusão)</span>
+                <span class="icon-svg" style="color: #38bdf8;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg></span>
+              </span>
+              <span class="kpi-value font-mono" id="kpiResinaEntrada">3.605,0 Kg</span>
+              <span class="kpi-subtext">Base: PEBD, PEAD e Coex</span>
+            </div>
+
+            <div class="kpi-card kpi-acabado">
+              <span class="kpi-label">
+                <span>Produto Acabado (Corte e Solda)</span>
+                <span class="icon-svg" style="color: var(--andon-green);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16.5 9.4 7.55 4.24"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" x2="12" y1="22" y2="12"/></svg></span>
+              </span>
+              <span class="kpi-value font-mono" id="kpiProdutoAcabado">7.151,3 Kg</span>
+              <span class="kpi-subtext" id="kpiTotalSacos">152,0 milheiros</span>
+            </div>
+
+            <div class="kpi-card kpi-refugo">
+              <span class="kpi-label">
+                <span>Total de Sucata / Refugo</span>
+                <span class="icon-svg" style="color: var(--andon-red);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></span>
+              </span>
+              <span class="kpi-value font-mono" id="kpiTotalRefugo" style="color: #f87171;">150,6 Kg</span>
+              <span class="kpi-subtext" id="kpiRefugoPct">2,06% do volume processado</span>
+            </div>
+
+            <div class="kpi-card kpi-rendimento">
+              <span class="kpi-label">
+                <span>Rendimento Global Matéria-Prima</span>
+                <span class="icon-svg" style="color: #c084fc;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span>
+              </span>
+              <span class="kpi-value font-mono" id="kpiRendimento" style="color: #c084fc;">97,9%</span>
+              <span class="kpi-subtext">Meta Mínima: 95,0%</span>
+            </div>
+          </div>
+
+          <!-- Barra de fluxo visual de rendimento -->
+          <div class="mass-flow-bar-wrapper">
+            <div class="mass-flow-bar">
+              <div class="flow-segment-good" id="flowBarGood" style="width: 97.9%;"></div>
+              <div class="flow-segment-scrap" id="flowBarScrap" style="width: 2.1%;"></div>
+            </div>
+            <div class="flow-legend">
+              <span><span class="dot-status-inline"></span> Material Conforme em Produto Acabado (97.9%)</span>
+              <span><span class="dot-status-inline danger"></span> Refugo Total Acumulado (Aparas + Purgas + Soldas Queimadas: 2.1%)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5.1 VISÃO GERAL DO GALPÃO POR FLUXO SEQUENCIAL (3 BLOCOS) -->
+        <div class="flow-sequence-container">
+          <!-- BLOCO 1: EXTRUSÃO -->
+          <div class="flow-stage-block">
+            <div class="stage-header">
+              <div class="stage-title">
+                <span class="stage-number">1</span>
+                <div>
+                  <h3>Setor 1: EXTRUSÃO (Formação do Filme Plástico Tubular)</h3>
+                  <p style="font-size: 0.78rem; color: var(--text-secondary);">Máquinas EX-01 a EX-04 | Rendimento Kg/h e % Refugo de Balão</p>
+                </div>
+              </div>
+              <div class="stage-metrics-summary">
+                <div class="metric-pill">Capacidade: <strong>650 Kg/h</strong></div>
+                <div class="metric-pill">Ativas: <strong>3/4</strong></div>
+              </div>
+            </div>
+            <div class="machines-stage-grid" id="gridStageExtrusao">
+              <!-- Renderizado via DashboardModule.renderStageExtrusao() -->
+            </div>
+          </div>
+
+          <!-- BLOCO 2: IMPRESSÃO & REBOBINADEIRA -->
+          <div class="flow-stage-block">
+            <div class="stage-header">
+              <div class="stage-title">
+                <span class="stage-number">2</span>
+                <div>
+                  <h3>Setor 2: IMPRESSÃO FLEXOGRÁFICA & REBOBINADEIRA</h3>
+                  <p style="font-size: 0.78rem; color: var(--text-secondary);">Máquinas IM-01 e IM-02 | Velocidade m/min e Validação Pantone</p>
+                </div>
+              </div>
+              <div class="stage-metrics-summary">
+                <div class="metric-pill">Velocidade Média: <strong>180 m/min</strong></div>
+                <div class="metric-pill">Ativas: <strong>1/2</strong></div>
+              </div>
+            </div>
+            <div class="machines-stage-grid" id="gridStageImpressao">
+              <!-- Renderizado via DashboardModule.renderStageImpressao() -->
+            </div>
+          </div>
+
+          <!-- BLOCO 3: CORTE E SOLDA -->
+          <div class="flow-stage-block">
+            <div class="stage-header">
+              <div class="stage-title">
+                <span class="stage-number">3</span>
+                <div>
+                  <h3>Setor 3: CORTE E SOLDA (Conformação & Embalamento Final)</h3>
+                  <p style="font-size: 0.78rem; color: var(--text-secondary);">Máquinas CS-01 a CS-06 | Sacos/min, Pacotes e Modo Pista Dupla</p>
+                </div>
+              </div>
+              <div class="stage-metrics-summary">
+                <div class="metric-pill">Ritmo Médio: <strong>108 sc/min</strong></div>
+                <div class="metric-pill">Pistas Duplas Ativas: <strong>3</strong></div>
+              </div>
+            </div>
+            <div class="machines-stage-grid" id="gridStageCorteSolda">
+              <!-- Renderizado via DashboardModule.renderStageCorteSolda() -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 5.2 TABELA DE PRODUTIVIDADE DO TURNO (POR FUNCIONÁRIO E MÁQUINA) -->
+        <div class="productivity-table-card">
+          <div class="table-toolbar">
+            <div>
+              <h3 style="font-size: 1.15rem; font-weight: 800; color: white;">Tabela de Produtividade do Turno</h3>
+              <p style="font-size: 0.78rem; color: var(--text-secondary);">Desempenho individual por operador, taxa de refugo e atingimento de metas</p>
+            </div>
+
+            <div class="table-filters">
+              <select class="filter-select" id="dashFilterSector">
+                <option value="todos">Todos os Setores</option>
+                <option value="extrusao">Extrusão</option>
+                <option value="impressao">Impressão</option>
+                <option value="corte_solda">Corte e Solda</option>
+              </select>
+
+              <select class="filter-select" id="dashFilterShift">
+                <option value="todos">Todos os Turnos</option>
+                <option value="Turno 1">Turno 1 (06h - 14h)</option>
+                <option value="Turno 2">Turno 2 (14h - 22h)</option>
+                <option value="Turno 3">Turno 3 (22h - 06h)</option>
+              </select>
+
+              <input type="text" class="filter-input" id="dashSearchOperator" placeholder="Buscar operador..." />
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="industrial-table">
+              <thead>
+                <tr>
+                  <th>Operador</th>
+                  <th>Máquina / Setor</th>
+                  <th>Turno</th>
+                  <th>Modo Pistas</th>
+                  <th>Total Produzido</th>
+                  <th>Refugo / Sucata</th>
+                  <th>Eficiência (% Meta)</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="productivityTableBody">
+                <!-- Preenchido dinamicamente via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           ABA 2: PAINEL DO PREPARADOR / SUPERVISOR (ORGANIZAÇÃO RIGOROSA)
+           ================================================================ -->
+      <section class="tab-pane" id="pane-supervisor">
+        <div class="supervisor-container">
+          <div class="dashboard-header-bar">
+            <div class="dashboard-title">
+              <h2>Painel de Supervisão & Central de Andon</h2>
+              <p>Organização estrita por setor para resposta rápida do preparador e equipe de manutenção</p>
+            </div>
+            <div>
+              <span class="status-tag meta-ok">
+                <span class="dot-status-inline"></span>
+                <span>Supervisão Ativa: Valter Camargo</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- SELETOR SUPERIOR OBRIGATÓRIO DE SETOR -->
+          <div class="supervisor-sector-selector">
+            <button class="sector-tab-btn" data-sector="extrusao">
+              <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></span>
+              <span>Setor 1: Extrusão</span>
+              <span class="badge-count" id="countBadge-extrusao">4 Máqs</span>
+            </button>
+            <button class="sector-tab-btn" data-sector="impressao">
+              <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg></span>
+              <span>Setor 2: Impressão & Rebobinadeira</span>
+              <span class="badge-count" id="countBadge-impressao">2 Máqs</span>
+            </button>
+            <button class="sector-tab-btn active" data-sector="corte_solda">
+              <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/><path d="m8.12 15.88 6.68-6.68"/><path d="M17.6 6.4 20 4"/></svg></span>
+              <span>Setor 3: Corte e Solda</span>
+              <span class="badge-count" id="countBadge-corte_solda">6 Máqs</span>
+            </button>
+          </div>
+
+          <!-- CENTRAL DE CHAMADOS ANDON ATIVOS NO SETOR -->
+          <div class="supervisor-andon-board">
+            <div class="andon-board-header">
+              <h3 style="font-size: 1.1rem; font-weight: 800; color: #60a5fa; display: flex; align-items: center; gap: 0.5rem;">
+                <span class="icon-svg" style="color: #60a5fa;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg></span>
+                <span>Central de Chamados Andon em Tempo Real</span>
+              </h3>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Tempo decorrido atualizado a cada segundo</span>
+            </div>
+            <div class="andon-incidents-list" id="supervisorAndonList">
+              <!-- Cards de chamados ativos renderizados via JS -->
+            </div>
+          </div>
+
+          <!-- STATUS DAS MÁQUINAS DO SETOR SELECIONADO -->
+          <div>
+            <h3 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 0.85rem; color: white;">Máquinas do Setor Selecionado</h3>
+            <div class="machines-stage-grid" id="supervisorMachinesGrid">
+              <!-- Cards de máquinas renderizados via JS -->
+            </div>
+          </div>
+
+          <!-- FILA KANBAN DE OPs DO SETOR -->
+          <div class="kanban-section">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h3 style="font-size: 1.1rem; font-weight: 800; color: white;">Fila Kanban de Priorização de OPs</h3>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Supervisor pode reordenar a sequência de produção</span>
+            </div>
+            <div class="kanban-columns-grid" id="supervisorKanbanContainer">
+              <!-- Colunas Kanban renderizadas via JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           ABA 3: TERMINAL TABLET 10" (CHÃO DE FÁBRICA / KIOSK)
+           ================================================================ -->
+      <section class="tab-pane" id="pane-tablet">
+        <div class="tablet-kiosk-wrapper">
+          <!-- BARRA SUPERIOR DO KIOSK -->
+          <div class="kiosk-top-bar">
+            <div class="kiosk-machine-info">
+              <div class="kiosk-machine-badge" id="kioskMachineId">CS-01</div>
+              <div class="kiosk-sector-indicator">
+                <span id="kioskMachineName">Corte e Solda 01 - Fundo Gunter</span>
+              </div>
+            </div>
+
+            <!-- Seletor de simulação de terminal -->
+            <div class="kiosk-machine-selector">
+              <span style="font-size: 0.75rem; color: var(--text-secondary);">Alternar Máquina:</span>
+              <select class="kiosk-select" id="tabletMachineSelector">
+                <optgroup label="Setor 3: Corte e Solda">
+                  <option value="CS-01" selected>CS-01 (Fundo Gunter - Pista Dupla)</option>
+                  <option value="CS-02">CS-02 (Lateral c/ Pista Dupla)</option>
+                  <option value="CS-03">CS-03 (Pouch 3 Soldas - Chamado)</option>
+                  <option value="CS-04">CS-04 (Sacaria Pesada)</option>
+                  <option value="CS-05">CS-05 (Alça Fita - Em Setup)</option>
+                  <option value="CS-06">CS-06 (Bloquetadeira Automática)</option>
+                </optgroup>
+                <optgroup label="Setor 1: Extrusão">
+                  <option value="EX-01">EX-01 (Monocamada 75mm)</option>
+                  <option value="EX-02">EX-02 (Coex 3 Camadas)</option>
+                  <option value="EX-03">EX-03 (Monocamada 60mm)</option>
+                  <option value="EX-04">EX-04 (Balão Tubular 90mm)</option>
+                </optgroup>
+                <optgroup label="Setor 2: Impressão & Rebobinadeira">
+                  <option value="IM-01">IM-01 (Flexo 6 Cores)</option>
+                  <option value="IM-02">IM-02 (Flexo Gearless 8 Cores)</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div class="kiosk-status-pill produzindo" id="kioskStatusPill">
+              <span class="dot"></span> PRODUZINDO
+            </div>
+          </div>
+
+          <!-- ÁREA DO CHÃO DE FÁBRICA DO TABLET -->
+          <div class="kiosk-body">
+            <!-- BANNER DE IDENTIFICAÇÃO DA OP ATIVA -->
+            <div class="kiosk-op-banner">
+              <div class="kiosk-op-info">
+                <div class="kiosk-op-code" id="kioskOpCode">OP 2885-0004</div>
+                <div class="kiosk-op-product" id="kioskOpProduct">Saco Valvulado PEBD 240x350x0.08mm Pigmentado Branco</div>
+                <div class="kiosk-op-client" id="kioskOpClient">Cliente: Sacaria Soares Ltda | Meta: 120.000 un (4.500 Kg)</div>
+              </div>
+
+              <button class="btn-kiosk-op-search" onclick="TabletModule.openNumericKeypad('dummyOpSearch', 'Digitar Número da OP')">
+                <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+                <span>Buscar OP (Teclado)</span>
+              </button>
+            </div>
+
+            <!-- CONTEÚDO ESPECÍFICO DINÂMICO CONFORME O SETOR (EXTRUSÃO / IMPRESSÃO / CORTE E SOLDA) -->
+            <div id="kioskSectorContent">
+              <!-- Preenchido dinamicamente via TabletModule.render() -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           ABA 4: ORDENS DE PRODUÇÃO & FICHAS TÉCNICAS (ADMINISTRATIVO)
+           ================================================================ -->
+      <section class="tab-pane" id="pane-ops">
+        <div class="dashboard-header-bar">
+          <div class="dashboard-title">
+            <h2>Gestão Administrativa de OPs & Fichas Técnicas</h2>
+            <p>Rastreabilidade ponta a ponta de matérias-primas, bobinas-mãe e especificações de engenharia</p>
+          </div>
+          <div>
+            <button class="btn-primary" onclick="App.showToast('Módulo de cadastro de nova OP habilitado para o Gerente.', 'info')">
+              <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg></span>
+              <span>Nova Ordem de Produção</span>
+            </button>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 340px 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+          <!-- Lista Lateral de OPs -->
+          <div class="kanban-column" style="background: var(--bg-surface); height: 500px; overflow-y: auto;">
+            <div class="kanban-col-header">
+              <span>Ordens de Produção Ativas</span>
+              <span class="font-mono">5 OPs</span>
+            </div>
+            <div class="kanban-cards-wrapper" id="opsListContainer">
+              <!-- Renderizado via OpsModule.renderOpsList() -->
+            </div>
+          </div>
+
+          <!-- Detalhe da OP e Ficha Técnica JSON -->
+          <div class="kanban-column" style="background: var(--bg-surface);" id="opDetailContainer">
+            <!-- Renderizado via OpsModule.renderOpDetail() -->
+          </div>
+        </div>
+
+        <!-- Rastreabilidade de Bobinas Mães (QR Codes) -->
+        <div class="productivity-table-card">
+          <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 0.85rem; color: white;">Rastreabilidade de Bobinas do Chão de Fábrica (QR Code)</h3>
+          <div class="table-responsive">
+            <table class="industrial-table">
+              <thead>
+                <tr>
+                  <th>Código QR</th>
+                  <th>Ordem de Produção</th>
+                  <th>Origem</th>
+                  <th>Peso Bruto / Líquido</th>
+                  <th>Dimensões (L x Esp)</th>
+                  <th>Inspeção</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="bobinasRastreabilidadeTable">
+                <!-- Renderizado via OpsModule -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           ABA 5: COPILOTO IA EXECUTIVO (PLASTIA)
+           ================================================================ -->
+      <section class="tab-pane" id="pane-copilot">
+        <div class="copilot-container">
+          <!-- Barra Lateral de Perguntas e Diagnósticos -->
+          <div class="copilot-sidebar">
+            <div class="copilot-avatar-block">
+              <div class="copilot-avatar-icon icon-svg" style="color: white;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+              </div>
+              <div>
+                <h3 style="font-size: 1.05rem; font-weight: 800; color: white;">PlastIA Copiloto</h3>
+                <p style="font-size: 0.72rem; color: #a855f7; font-weight: 700;">IA Gerencial Industrial</p>
+              </div>
+            </div>
+
+            <div class="copilot-quick-prompts">
+              <h4>Perguntas Frequentes do Gestor</h4>
+
+              <button class="btn-quick-prompt" data-query="Gerar o resumo executivo completo do turno atual">
+                <div style="font-weight: 700; color: white;">Resumo do Turno</div>
+                <div style="color: var(--text-muted); font-size: 0.75rem;">Balanço de produção e índices</div>
+              </button>
+
+              <button class="btn-quick-prompt" data-query="Qual máquina teve maior refugo e qual o motivo?">
+                <div style="font-weight: 700; color: white;">Maior Refugo</div>
+                <div style="color: var(--text-muted); font-size: 0.75rem;">Qual máquina descartou mais sucata?</div>
+              </button>
+
+              <button class="btn-quick-prompt" data-query="A OP do cliente Sacaria Soares vai atrasar?">
+                <div style="font-weight: 700; color: white;">Previsão de Prazo</div>
+                <div style="color: var(--text-muted); font-size: 0.75rem;">OP Sacaria Soares vai atrasar?</div>
+              </button>
+
+              <button class="btn-quick-prompt" data-query="Quem foi o operador mais eficiente no turno?">
+                <div style="font-weight: 700; color: white;">Operador Destaque</div>
+                <div style="color: var(--text-muted); font-size: 0.75rem;">Quem teve maior eficiência?</div>
+              </button>
+
+              <button class="btn-quick-prompt" data-query="Detectar desvios de temperatura e anomalias nas extrusoras">
+                <div style="font-weight: 700; color: white;">Anomalias Térmicas</div>
+                <div style="color: var(--text-muted); font-size: 0.75rem;">Desvios de temperatura na Extrusão</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Janela de Chat da IA -->
+          <div class="copilot-chat-window">
+            <div class="copilot-chat-messages" id="copilotMessagesContainer">
+              <div class="chat-message-bubble ai">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; color: #a855f7; font-weight: 700; font-size: 0.8rem;">
+                  <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></span>
+                  <span>PlastIA Copiloto Executivo</span>
+                  <span style="font-size: 0.7rem; color: var(--text-muted);">Conectado</span>
+                </div>
+                <div>
+                  Olá! Sou o assistente de inteligência artificial gerencial da sua indústria de embalagens plásticas flexíveis. Estou conectado em tempo real aos dados locais do galpão (Edge Server) e ao espelho da nuvem.<br><br>
+                  Como posso ajudar na tomada de decisões administrativas hoje?
+                </div>
+              </div>
+            </div>
+
+            <!-- Barra de Envio de Mensagem -->
+            <div class="copilot-input-bar">
+              <input type="text" class="copilot-input-field" id="copilotInput" placeholder="Faça uma pergunta sobre produção, refugo, OPs ou operadores..." />
+              <button class="btn-primary" id="btnCopilotSend">
+                <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" x2="11" y1="2" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></span>
+                <span>Enviar</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ====================================================================
+       MODAIS E POPUPS INDUSTRIAIS
+       ==================================================================== -->
+
+  <!-- 1. MODAL DE LIBERAÇÃO DE SETUP COM PIN DO PREPARADOR (4.1) -->
+  <div class="modal-backdrop" id="setupReleaseModal" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="icon-svg" style="color: #eab308;"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+          <span>Liberação Técnica de Setup</span>
+        </h3>
+        <button class="btn-close-modal" onclick="SupervisorModule.closeSetupModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.88rem; color: var(--text-secondary);">
+          Máquina: <strong class="font-mono" id="setupModalMaquinaId" style="color: #38bdf8;">CS-05</strong> | Motivo: <strong id="setupModalMotivo">Acerto de solda</strong>
+        </p>
+
+        <div style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">
+          Checklist Obrigatório de Pré-Produção:
+        </div>
+        <div id="setupModalChecklist" style="display: flex; flex-direction: column; gap: 0.6rem;">
+          <!-- Checkboxes preenchidos via JS -->
+        </div>
+
+        <div class="pin-input-group">
+          <label style="font-size: 0.85rem; font-weight: 700; color: white;">Digite o PIN do Preparador (4 dígitos):</label>
+          <div class="pin-display-box font-mono" id="setupPinDisplay">••••</div>
+          <small style="color: var(--text-muted); font-size: 0.75rem;">PIN de homologação: use 1234 ou 0000</small>
+        </div>
+
+        <!-- Teclado do PIN -->
+        <div class="keypad-grid" style="grid-template-columns: repeat(3, 1fr);">
+          <button class="keypad-btn" onclick="SupervisorModule.pressPinKey('1')">1</button>
+          <button class="keypad-btn" onclick="SupervisorModule.pressPinKey('2')">2</button>
+          <button class="keypad-btn" onclick="SupervisorModule.pressPinKey('3')">3</button>
+          <button class="keypad-btn" onclick="SupervisorModule.pressPinKey('4')">4</button>
+          <button class="keypad-btn" onclick="SupervisorModule.pressPinKey('5')">5</button>
+          <button class="keypad-btn" onclick="SupervisorModule.pressPinKey('6')">6</button>
+          <button class="keypad-btn" onclick="SupervisorModule.pressPinKey('7')">7</button>
+          <button class="keypad-btn" onclick="SupervisorModule.pressPinKey('8')">8</button>
+          <button class="keypad-btn" onclick="SupervisorModule.pressPinKey('9')">9</button>
+          <button class="keypad-btn btn-clear" onclick="SupervisorModule.pressPinKey('clear')">LIMPAR</button>
+          <button class="keypad-btn" onclick="SupervisorModule.pressPinKey('0')">0</button>
+          <button class="keypad-btn" onclick="SupervisorModule.pressPinKey('backspace')">
+            <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" x2="12" y1="9" y2="15"/><line x1="12" x2="18" y1="9" y2="15"/></svg></span>
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="SupervisorModule.closeSetupModal()">Cancelar</button>
+        <button class="btn-primary" style="background: #eab308; color: #020617;" onclick="SupervisorModule.confirmSetupRelease()">
+          Liberar para Produção (Verde)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. MODAL DE INSPEÇÃO PERIÓDICA DE QUALIDADE 3x POR BOBINA (3.3) -->
+  <div class="modal-backdrop" id="qualityInspectionModal" style="display: none;">
+    <div class="modal-dialog modal-blue">
+      <div class="modal-header">
+        <h3 style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="icon-svg" style="color: #38bdf8;"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span>
+          <span>Inspeção Periódica de Qualidade (3x por Bobina)</span>
+        </h3>
+        <button class="btn-close-modal" onclick="TabletModule.closeQualityModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size: 0.85rem; color: var(--text-secondary); background: rgba(56, 189, 248, 0.1); padding: 0.75rem; border-radius: var(--radius-md); border-left: 4px solid #38bdf8;">
+          Aferição obrigatória no <strong>Início</strong>, <strong>Meio</strong> e <strong>Fim</strong> da bobina para garantir a integridade da embalagem.
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="pin-input-group">
+            <label style="font-size: 0.8rem; font-weight: 700;">Etapa da Bobina:</label>
+            <select class="filter-select" id="inspEtapa" style="width: 100%;">
+              <option value="inicio">1. Início da Bobina</option>
+              <option value="meio">2. Meio da Bobina</option>
+              <option value="fim">3. Fim da Bobina</option>
+            </select>
+          </div>
+
+          <div class="pin-input-group">
+            <label style="font-size: 0.8rem; font-weight: 700;">Largura Medida (mm):</label>
+            <input type="number" class="filter-input font-mono" id="inspLargura" value="240" step="0.5" />
+            <small style="color: var(--text-muted); font-size: 0.72rem;">Nominal: 240mm ± 5mm</small>
+          </div>
+
+          <div class="pin-input-group">
+            <label style="font-size: 0.8rem; font-weight: 700;">Espessura (µm micras):</label>
+            <input type="number" class="filter-input font-mono" id="inspEspessura" value="80" step="1" />
+            <small style="color: var(--text-muted); font-size: 0.72rem;">Alvo: 80µm ± 4µm</small>
+          </div>
+
+          <div class="pin-input-group">
+            <label style="font-size: 0.8rem; font-weight: 700;">Teste de Tração da Solda:</label>
+            <select class="filter-select" id="inspSolda" style="width: 100%;">
+              <option value="aprovado">Conforme (Solda Aprovada)</option>
+              <option value="reprovado">Não Conforme (Solda Reprovada)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="pin-input-group">
+          <label style="font-size: 0.8rem; font-weight: 700;">Força de Ruptura (Kg):</label>
+          <input type="number" class="filter-input font-mono" id="inspTracao" value="4.8" step="0.1" />
+          <small style="color: var(--text-muted); font-size: 0.72rem;">Mínimo aceitável: 3.5 Kg</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="TabletModule.closeQualityModal()">Cancelar</button>
+        <button class="btn-primary" onclick="TabletModule.saveQualityInspection()">
+          Salvar Laudo de Inspeção
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. MODAL DE APONTAMENTO DE REFUGO / SUCATA (KG) -->
+  <div class="modal-backdrop" id="scrapModal" style="display: none;">
+    <div class="modal-dialog modal-danger">
+      <div class="modal-header">
+        <h3 style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="icon-svg" style="color: #ef4444;"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></span>
+          <span>Apontamento de Sucata / Refugo (Kg)</span>
+        </h3>
+        <button class="btn-close-modal" onclick="TabletModule.closeScrapModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="pin-input-group">
+          <label style="font-size: 0.85rem; font-weight: 700;">Peso do Descarte (Quilogramas):</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="number" class="filter-input font-mono" id="scrapWeightInput" placeholder="Ex: 14.5" step="0.1" style="font-size: 1.4rem; font-weight: 800; flex: 1;" />
+            <button class="btn-secondary" onclick="TabletModule.openNumericKeypad('scrapWeightInput', 'Digitar Peso do Refugo (Kg)')">
+              <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="7" cy="7" r="1"/><circle cx="12" cy="7" r="1"/><circle cx="17" cy="7" r="1"/><circle cx="7" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="17" cy="12" r="1"/><circle cx="7" cy="17" r="1"/><circle cx="12" cy="17" r="1"/><circle cx="17" cy="17" r="1"/></svg></span>
+              <span>Teclado</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="pin-input-group">
+          <label style="font-size: 0.85rem; font-weight: 700;">Motivo do Defeito / Sucata:</label>
+          <select class="filter-select" id="scrapReasonSelect" style="width: 100%;">
+            <option value="Queima de solda no acerto de pista">Queima de solda no acerto de pista</option>
+            <option value="Desalinhamento de fotocélula / arte">Desalinhamento de fotocélula / arte</option>
+            <option value="Aparas de refile de borda">Aparas de refile de borda</option>
+            <option value="Oscilação de espessura de balão">Oscilação de espessura de balão</option>
+            <option value="Purga de início de turno / troca de cor">Purga de início de turno / troca de cor</option>
+            <option value="Outros defeitos mecânicos">Outros defeitos mecânicos</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="TabletModule.closeScrapModal()">Cancelar</button>
+        <button class="btn-primary" style="background: #ef4444;" onclick="TabletModule.saveScrap()">
+          Salvar Apontamento
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. MODAL DE CONCLUSÃO DE BOBINA MÃE (EXTRUSÃO 3.1) -->
+  <div class="modal-backdrop" id="concludeBobinaModal" style="display: none;">
+    <div class="modal-dialog modal-blue">
+      <div class="modal-header">
+        <h3 style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="icon-svg" style="color: #38bdf8;"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" x2="22" y1="12" y2="12"/></svg></span>
+          <span>Concluir Bobina Mãe da Extrusão</span>
+        </h3>
+        <button class="btn-close-modal" onclick="document.getElementById('concludeBobinaModal').style.display='none'">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="pin-input-group">
+          <label style="font-size: 0.85rem; font-weight: 700;">Código QR da Etiqueta Física:</label>
+          <input type="text" class="filter-input font-mono" id="bobinaQrCodeInput" value="QR-EX01-2885-003" />
+        </div>
+
+        <div class="pin-input-group">
+          <label style="font-size: 0.85rem; font-weight: 700;">Peso Bruto Aferido na Balança (Kg):</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="number" class="filter-input font-mono" id="bobinaWeightInput" value="285.0" step="0.5" style="font-size: 1.4rem; font-weight: 800; flex: 1;" />
+            <button class="btn-secondary" onclick="TabletModule.openNumericKeypad('bobinaWeightInput', 'Digitar Peso da Bobina (Kg)')">
+              <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="7" cy="7" r="1"/><circle cx="12" cy="7" r="1"/><circle cx="17" cy="7" r="1"/><circle cx="7" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="17" cy="12" r="1"/><circle cx="7" cy="17" r="1"/><circle cx="12" cy="17" r="1"/><circle cx="17" cy="17" r="1"/></svg></span>
+              <span>Teclado</span>
+            </button>
+          </div>
+          <small style="color: var(--text-muted); font-size: 0.75rem;">Tara do tubete padrão: 5,5 Kg</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="document.getElementById('concludeBobinaModal').style.display='none'">Cancelar</button>
+        <button class="btn-primary" onclick="TabletModule.saveBobinaMae()">
+          Gerar Etiqueta & Liberar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. TECLADO NUMÉRICO POP-UP NATIVO (2.2 & 3.3) -->
+  <div class="numeric-keypad-overlay" id="numericKeypadOverlay" style="display: none;">
+    <div class="numeric-keypad-modal">
+      <div class="keypad-header">
+        <h4 id="keypadTitle">Digitação Numérica</h4>
+        <button class="btn-close-modal" onclick="TabletModule.closeKeypad()">×</button>
+      </div>
+
+      <div class="keypad-display font-mono" id="keypadDisplay">0</div>
+
+      <div class="keypad-grid">
+        <button class="keypad-btn" onclick="TabletModule.keypadPress('1')">1</button>
+        <button class="keypad-btn" onclick="TabletModule.keypadPress('2')">2</button>
+        <button class="keypad-btn" onclick="TabletModule.keypadPress('3')">3</button>
+        <button class="keypad-btn" onclick="TabletModule.keypadPress('4')">4</button>
+        <button class="keypad-btn" onclick="TabletModule.keypadPress('5')">5</button>
+        <button class="keypad-btn" onclick="TabletModule.keypadPress('6')">6</button>
+        <button class="keypad-btn" onclick="TabletModule.keypadPress('7')">7</button>
+        <button class="keypad-btn" onclick="TabletModule.keypadPress('8')">8</button>
+        <button class="keypad-btn" onclick="TabletModule.keypadPress('9')">9</button>
+        <button class="keypad-btn btn-clear" onclick="TabletModule.keypadPress('clear')">LIMPAR</button>
+        <button class="keypad-btn" onclick="TabletModule.keypadPress('0')">0</button>
+        <button class="keypad-btn" onclick="TabletModule.keypadPress('.')">,</button>
+        <button class="keypad-btn" style="grid-column: span 3; background: #334155;" onclick="TabletModule.keypadPress('backspace')">
+          <span class="icon-svg" style="margin-right: 6px;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" x2="12" y1="9" y2="15"/><line x1="12" x2="18" y1="9" y2="15"/></svg></span>
+          <span>APAGAR DÍGITO</span>
+        </button>
+        <button class="keypad-btn btn-confirm" onclick="TabletModule.keypadConfirm()">
+          CONFIRMAR VALOR
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts da Aplicação MES -->
+  <script src="js/icons.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/supervisor.js"></script>
+  <script src="js/tablet.js"></script>
+  <script src="js/copilot.js"></script>
+  <script src="js/ops.js"></script>
+
+  <!-- Service Worker para suporte PWA Offline Local-First -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').then(
+          (reg) => console.log('Service Worker PWA Local-First registrado:', reg.scope),
+          (err) => console.log('Falha ao registrar Service Worker:', err)
+        );
+      });
+    }
+  </script>
+</body>
+</html>

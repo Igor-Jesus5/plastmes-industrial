@@ -1,0 +1,17 @@
+{
+  "name": "PlastMES Industrial - MES Local-First",
+  "short_name": "PlastMES",
+  "description": "Sistema MES Industrial para Fábricas de Embalagens Plásticas Flexíveis",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#080d16",
+  "theme_color": "#080d16",
+  "icons": [
+    {
+      "src": "assets/logo.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
