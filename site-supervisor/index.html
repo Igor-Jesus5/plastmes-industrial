@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PlastMES - Painel do Supervisor & Preparador (Linha & Andon)</title>
+  
+  <!-- PWA & Kiosk Meta -->
+  <meta name="theme-color" content="#080d16">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="../manifest.json">
+
+  <!-- Estilos Modulares -->
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/components.css">
+</head>
+<body>
+  <div id="app">
+    
+    <!-- BARRA DE NAVEGAÇÃO ENTRE OS 3 SITES DESACOPLADOS -->
+    <div class="multisite-nav-bar">
+      <div class="multisite-nav-brand">
+        <span class="icon-svg" style="color: #eab308;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </span>
+        <span>PLASTMES INDUSTRIAL — SITE 2: SUPERVISÃO & QUALIDADE</span>
+      </div>
+
+      <!-- Widget de Conexão com os outros sites conectados em tempo real -->
+      <div id="peerSyncWidget"></div>
+
+      <div class="multisite-links-group">
+        <a href="../site-operador/index.html" target="_blank" class="multisite-link-pill popout" title="Abrir Site do Operador em nova janela">
+          <span>📱 Abrir Operador ↗</span>
+        </a>
+        <a href="index.html" class="multisite-link-pill current" title="Você está no Site do Supervisor">
+          <span>👷 Supervisor</span>
+        </a>
+        <a href="../site-executivo/index.html" target="_blank" class="multisite-link-pill popout" title="Abrir Site Executivo em nova janela">
+          <span>💼 Abrir Executivo ↗</span>
+        </a>
+        <a href="../index.html" class="multisite-link-pill" title="Voltar ao Hub Central e Modo Multi-Telas">
+          <span>🏠 Hub Central</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- CABEÇALHO DO SUPERVISOR -->
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="brand-logo-badge icon-svg" style="color: #eab308;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/></svg>
+        </div>
+        <div class="brand-title">
+          <h1>PAINEL DO SUPERVISOR & PREPARADOR</h1>
+          <p>
+            <span>Organização Rigorosa por Setor & Gestão Andon em Tempo Real</span>
+            <span class="badge-pwa-local" style="background: rgba(234, 179, 8, 0.2); color: #facc15; border-color: #eab308;">LINHA ATIVA</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Relógio e Status -->
+      <div class="header-actions">
+        <div class="plant-clock">
+          <div class="time font-mono" id="supervisorClockTime">13:15:00</div>
+          <div class="shift"><span class="dot-status-inline"></span> Turno 1 (06h - 14h)</div>
+        </div>
+
+        <button class="btn-icon active" id="btnToggleAudio" title="Sons de Alerta Andon Ativos">
+          <span class="icon-svg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+          </span>
+        </button>
+      </div>
+    </header>
+
+    <!-- CONTEÚDO PRINCIPAL DO SUPERVISOR -->
+    <main class="main-view-container" style="padding: 1.5rem;">
+      <div class="supervisor-container">
+        
+        <!-- ================================================================
+             4. SELETOR SUPERIOR OBRIGATÓRIO DE SETOR (SEM MISTURAR MÁQUINAS)
+             ================================================================ -->
+        <div class="supervisor-sector-selector">
+          <button class="sector-tab-btn active" data-sector="corte_solda" id="sectorBtnCorteSolda">
+            <span class="icon-svg">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" x2="8.12" y1="4" y2="15.88"/><line x1="14.47" x2="20" y1="14.48" y2="20"/><line x1="8.12" x2="12" y1="8.12" y2="12"/></svg>
+            </span>
+            <span>Setor 3: Corte e Solda</span>
+            <span class="tab-badge" id="countBadge-corte_solda">6 Máqs</span>
+          </button>
+          <button class="sector-tab-btn" data-sector="extrusao" id="sectorBtnExtrusao">
+            <span class="icon-svg">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h20"/><path d="m5 10 7-7 7 7"/><path d="M6 10v10"/><path d="M18 10v10"/></svg>
+            </span>
+            <span>Setor 1: Extrusão</span>
+            <span class="tab-badge" id="countBadge-extrusao">4 Máqs</span>
+          </button>
+          <button class="sector-tab-btn" data-sector="impressao" id="sectorBtnImpressao">
+            <span class="icon-svg">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+            </span>
+            <span>Setor 2: Impressão & Rebobinadeira</span>
+            <span class="tab-badge" id="countBadge-impressao">2 Máqs</span>
+          </button>
+        </div>
+
+        <!-- ================================================================
+             4.1 FILTRO EXCLUSIVO DO SETOR: CARDS DE STATUS DAS MÁQUINAS
+             ================================================================ -->
+        <div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+            <h3 style="font-size: 1.15rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem;">
+              <span>Visão das Máquinas do Setor</span>
+              <span id="activeSectorLabelBadge" class="badge-pwa-local" style="font-size: 0.7rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8;">CORTE E SOLDA</span>
+            </h3>
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">Atualização Instantânea via Mesh Sync</span>
+          </div>
+
+          <div class="supervisor-machines-grid" id="supervisorMachinesGrid">
+            <!-- Renderizado dinamicamente com as máquinas do setor -->
+          </div>
+        </div>
+
+        <!-- ================================================================
+             4.2 CENTRAL DE CHAMADOS ANDON (TEMPO DECORRIDO EM TEMPO REAL)
+             ================================================================ -->
+        <div class="andon-panel">
+          <div class="andon-panel-head">
+            <div class="andon-panel-title">
+              <span class="icon-svg" style="color: #38bdf8;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              </span>
+              <span>Central de Chamados Andon Ativos</span>
+              <span class="status-badge parada" id="andonActiveCount">0 Chamados</span>
+            </div>
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">Ouvindo transmissões ao vivo dos tablets de máquina</span>
+          </div>
+
+          <div class="andon-active-list" id="supervisorAndonList">
+            <!-- Renderizado dinamicamente -->
+          </div>
+        </div>
+
+        <!-- ================================================================
+             4.3 FILA KANBAN DE OPs DO SETOR
+             ================================================================ -->
+        <div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+            <h3 style="font-size: 1.15rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem;">
+              <span class="icon-svg" style="color: #38bdf8;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
+              </span>
+              <span>Fila Kanban de Priorização de OPs (Setor Ativo)</span>
+            </h3>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Reordene ou altere a prioridade para sincronizar com os tablets</span>
+          </div>
+
+          <div class="kanban-row" id="supervisorKanbanContainer">
+            <!-- Renderizado dinamicamente -->
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ====================================================================
+       MODAL: 4.4 LIBERAÇÃO DE SETUP COM PIN DO PREPARADOR
+       ==================================================================== -->
+  <div class="modal-backdrop" id="setupReleaseModal" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="icon-svg" style="color: #eab308;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          </span>
+          <h3 style="font-size: 1.15rem; font-weight: 800;" id="setupReleaseModalTitle">
+            Liberação Técnica de Setup (Transição Amarelo ➔ Verde)
+          </h3>
+        </div>
+        <button class="btn-close-modal" onclick="closeSetupReleaseModal()">×</button>
+      </div>
+
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+        <p style="font-size: 0.85rem; color: var(--text-secondary);">
+          O preparador deve inspecionar fisicamente os primeiros sacos produzidos, conferir o checklist de segurança e digitar seu PIN pessoal para liberar a máquina para o status <strong style="color: #22c55e;">PRODUZINDO</strong>.
+        </p>
+
+        <div class="setup-checklist-box">
+          <label class="setup-check-item">
+            <input type="checkbox" checked id="chk1" />
+            <span>Alinhamento de bobina, tensão de desbobinamento e guias laterais conferidos</span>
+          </label>
+          <label class="setup-check-item">
+            <input type="checkbox" checked id="chk2" />
+            <span>Temperatura do barramento e pressão pneumática (4.5 bar) estabilizadas</span>
+          </label>
+          <label class="setup-check-item">
+            <input type="checkbox" checked id="chk3" />
+            <span>Teste destrutivo de tração da solda nos 10 primeiros sacos 100% APROVADO</span>
+          </label>
+          <label class="setup-check-item">
+            <input type="checkbox" checked id="chk4" />
+            <span>Dimensões de largura, sanfona e abertura de boca conferidas com trena/micrômetro</span>
+          </label>
+        </div>
+
+        <div class="pin-input-group">
+          <label style="font-size: 0.85rem; font-weight: 700;">PIN de Autorização do Preparador:</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="password" class="filter-input font-mono" id="preparadorPinInput" placeholder="Digite PIN (ex: 1234 ou 0000)" maxlength="6" style="font-size: 1.3rem; letter-spacing: 0.25em; text-align: center;" />
+            <button class="btn-secondary" onclick="insertQuickPin('1234')">PIN Rápido (1234)</button>
+          </div>
+          <small style="color: var(--text-muted); font-size: 0.75rem;">PINs válidos para teste: 1234 (Carlos/Operador) ou 0000 (Valter Camargo/Preparador)</small>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeSetupReleaseModal()">Cancelar</button>
+        <button class="btn-primary" style="background: #eab308; color: #020617; font-weight: 800;" onclick="confirmSetupReleaseSubmit()">
+          Validar PIN & Liberar Máquina
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../js/icons.js"></script>
+  <script src="../js/sync-bus.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/supervisor.js"></script>
+  <script>
+    // Inicialização do Nó Supervisor no Barramento Inter-Sites
+    let currentSector = 'corte_solda';
+    let currentReleaseMaquinaId = null;
+
+    // Mock minimal app object para SupervisorModule
+    window.App = {
+      db: window.PlastMES_DB.load(),
+      activeTab: 'supervisor',
+      audioEnabled: true,
+      playWarningTone() { window.SyncBus.playIndustrialSound('andon-alert'); },
+      showToast(msg, type = 'info') {
+        let container = document.getElementById('toastContainer');
+        if (!container) {
+          container = document.createElement('div');
+          container.id = 'toastContainer';
+          container.className = 'toast-container';
+          document.body.appendChild(container);
+        }
+        const toast = document.createElement('div');
+        toast.className = `toast-notification ${type}`;
+        toast.innerHTML = `<div style="font-size: 0.9rem; font-weight: 700;">${msg}</div>`;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Inicializa o barramento com a função 'supervisor'
+      window.SyncBus.init({
+        role: 'supervisor',
+        title: 'Painel Supervisor & Preparador'
+      });
+
+      // 2. Monta o widget visual de nós conectados
+      window.SyncBus.mountPeerWidget('peerSyncWidget');
+
+      // 3. Inicializa módulo do supervisor
+      window.SupervisorModule.init(window.App);
+
+      // Relógio
+      setInterval(() => {
+        const d = new Date();
+        const timeEl = document.getElementById('supervisorClockTime');
+        if (timeEl) timeEl.textContent = d.toTimeString().split(' ')[0];
+      }, 1000);
+
+      // Configuração de alternância dos setores
+      setupSectorButtons();
+
+      // =====================================================================
+      // INTERCOMUNICAÇÃO EM TEMPO REAL: ESCUTAR EVENTOS VINDOS DO OPERADOR
+      // =====================================================================
+
+      // A) Operador acionou um chamado Andon ("Chamar Manutenção", "Chamar Preparador", etc.)
+      window.SyncBus.on(window.SyncBus.EVENTS.ANDON_CALLED, (msg) => {
+        const payload = msg.payload;
+        window.App.db = window.PlastMES_DB.load();
+
+        // Alerta sonoro industrial + Toast chamativo
+        window.SyncBus.playIndustrialSound('andon-alert');
+        window.App.showToast(`🚨 NOVO CHAMADO ANDON: Máquina ${payload.machineId} solicitou [${payload.tipoChamado}]!`, 'danger');
+
+        // Se a máquina for do setor atual, pisca destaque visual
+        window.SupervisorModule.render();
+
+        // Destaca o card da máquina
+        setTimeout(() => {
+          const card = document.querySelector(`[data-machine-id="${payload.machineId}"]`);
+          if (card) card.classList.add('live-pulse-alert');
+        }, 100);
+      });
+
+      // B) Operador reprovou teste de qualidade (solda fraca / largura fora)
+      window.SyncBus.on(window.SyncBus.EVENTS.QUALITY_INSPECTED, (msg) => {
+        const payload = msg.payload;
+        window.App.db = window.PlastMES_DB.load();
+        if (payload.aprovado === false) {
+          window.SyncBus.playIndustrialSound('quality-fail');
+          window.App.showToast(`⚠️ ALERTA DE QUALIDADE: Máquina ${payload.machineId} reprovou teste de solda! Lote suspeito gerado.`, 'danger');
+        } else {
+          window.App.showToast(`Inspeção de qualidade aprovada na máquina ${payload.machineId}.`, 'info');
+        }
+        window.SupervisorModule.render();
+      });
+
+      // C) Operador registrou pacote (+1 Pacote) ou refugo
+      window.SyncBus.on(window.SyncBus.EVENTS.PRODUCTION_RECORDED, (msg) => {
+        window.App.db = window.PlastMES_DB.load();
+        window.SupervisorModule.render();
+      });
+
+      window.SyncBus.on(window.SyncBus.EVENTS.SCRAP_RECORDED, (msg) => {
+        window.App.db = window.PlastMES_DB.load();
+        window.SupervisorModule.render();
+      });
+
+      // D) Estado do banco de dados sincronizado
+      window.SyncBus.on(window.SyncBus.EVENTS.STATE_SYNC_RESPONSE, () => {
+        window.App.db = window.PlastMES_DB.load();
+        window.SupervisorModule.render();
+      });
+    });
+
+    function setupSectorButtons() {
+      const btns = [
+        { id: 'sectorBtnCorteSolda', sector: 'corte_solda', label: 'CORTE E SOLDA' },
+        { id: 'sectorBtnExtrusao', sector: 'extrusao', label: 'EXTRUSÃO' },
+        { id: 'sectorBtnImpressao', sector: 'impressao', label: 'IMPRESSÃO & REBOBINADEIRA' }
+      ];
+
+      btns.forEach(b => {
+        const el = document.getElementById(b.id);
+        if (el) {
+          el.addEventListener('click', () => {
+            btns.forEach(x => {
+              const btnEl = document.getElementById(x.id);
+              if (btnEl) btnEl.classList.toggle('active', x.id === b.id);
+            });
+            window.SupervisorModule.activeSector = b.sector;
+            const lbl = document.getElementById('activeSectorLabelBadge');
+            if (lbl) lbl.textContent = b.label;
+            window.SupervisorModule.render();
+          });
+        }
+      });
+    }
+
+    // Modal de liberação de setup
+    function openSetupModal(maquinaId) {
+      currentReleaseMaquinaId = maquinaId;
+      document.getElementById('setupReleaseModalTitle').textContent = `Liberação Técnica de Setup — Máquina ${maquinaId}`;
+      document.getElementById('preparadorPinInput').value = '';
+      document.getElementById('setupReleaseModal').style.display = 'flex';
+    }
+
+    function closeSetupReleaseModal() {
+      document.getElementById('setupReleaseModal').style.display = 'none';
+      currentReleaseMaquinaId = null;
+    }
+
+    function insertQuickPin(pin) {
+      document.getElementById('preparadorPinInput').value = pin;
+    }
+
+    function confirmSetupReleaseSubmit() {
+      const pin = document.getElementById('preparadorPinInput').value.trim();
+      const db = window.PlastMES_DB.load();
+
+      // Validar PIN
+      const operadorValido = db.operadores.find(o => o.pin === pin);
+      if (!operadorValido && pin !== '1234' && pin !== '0000') {
+        window.App.showToast('PIN incorreto! Acesso negado para liberação de setup.', 'danger');
+        return;
+      }
+
+      const preparadorNome = operadorValido ? operadorValido.nome : "Valter Camargo (Preparador)";
+
+      // Invoca método atômico do DB que já emite evento no SyncBus
+      window.PlastMES_DB.releaseSetup(currentReleaseMaquinaId, preparadorNome, pin);
+      window.App.db = window.PlastMES_DB.load();
+
+      window.SyncBus.playIndustrialSound('setup-released');
+      window.App.showToast(`🟢 Máquina ${currentReleaseMaquinaId} liberada com sucesso por ${preparadorNome}!`, 'success');
+
+      closeSetupReleaseModal();
+      window.SupervisorModule.render();
+    }
+
+    // Vincula função global para o supervisor.js usar
+    window.SupervisorModule.openSetupReleaseModal = openSetupModal;
+  </script>
+</body>
+</html>

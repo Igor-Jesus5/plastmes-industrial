@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PlastMES - Terminal Tablet 10" (Operador Chão de Fábrica)</title>
+  
+  <!-- PWA & Kiosk Meta -->
+  <meta name="theme-color" content="#080d16">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="../manifest.json">
+
+  <!-- Estilos Modulares -->
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/tablet.css">
+  <link rel="stylesheet" href="../css/components.css">
+</head>
+<body class="kiosk-mode">
+  <div id="app">
+    
+    <!-- BARRA DE NAVEGAÇÃO ENTRE OS 3 SITES DESACOPLADOS -->
+    <div class="multisite-nav-bar">
+      <div class="multisite-nav-brand">
+        <span class="icon-svg" style="color: #22c55e;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><line x1="12" x2="12.01" y1="18" y2="18"/></svg>
+        </span>
+        <span>PLASTMES INDUSTRIAL — SITE 1: CHÃO DE FÁBRICA</span>
+      </div>
+
+      <!-- Widget de Conexão com os outros sites conectados em tempo real -->
+      <div id="peerSyncWidget"></div>
+
+      <div class="multisite-links-group">
+        <a href="index.html" class="multisite-link-pill current" title="Você está no Site do Operador">
+          <span>📱 Operador</span>
+        </a>
+        <a href="../site-supervisor/index.html" target="_blank" class="multisite-link-pill popout" title="Abrir Site do Supervisor em nova janela">
+          <span>👷 Abrir Supervisor ↗</span>
+        </a>
+        <a href="../site-executivo/index.html" target="_blank" class="multisite-link-pill popout" title="Abrir Site Executivo em nova janela">
+          <span>💼 Abrir Executivo ↗</span>
+        </a>
+        <a href="../index.html" class="multisite-link-pill" title="Voltar ao Hub Central e Modo Multi-Telas">
+          <span>🏠 Hub Central</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- CABEÇALHO DO TERMINAL KIOSK 10" -->
+    <header class="kiosk-header">
+      <div class="kiosk-header-left">
+        <div class="brand-logo-badge icon-svg" style="color: #22c55e;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <h2 id="kioskMachineId" class="font-mono" style="font-size: 1.4rem; font-weight: 900; color: white;">CS-01</h2>
+            <span id="kioskStatusPill" class="kiosk-status-pill produzindo">
+              <span class="dot"></span> PRODUZINDO
+            </span>
+          </div>
+          <div id="kioskMachineName" style="font-size: 0.85rem; color: var(--text-secondary);">
+            Corte e Solda 01 - Fundo Gunter
+          </div>
+        </div>
+      </div>
+
+      <!-- Seletor Rápido de Máquinas do Tablet -->
+      <div class="kiosk-header-center">
+        <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 2px;">
+          SELETOR DA MÁQUINA DESTE TABLET:
+        </label>
+        <select id="tabletMachineSelector" class="filter-select font-mono" style="font-size: 0.95rem; font-weight: 700; background: #0f172a; border-color: #38bdf8; color: white; padding: 0.4rem 0.8rem;">
+          <optgroup label="✂️ SETOR 3: CORTE E SOLDA">
+            <option value="CS-01" selected>CS-01 | Fundo Gunter (Pista Dupla)</option>
+            <option value="CS-02">CS-02 | Lateral Pista Dupla</option>
+            <option value="CS-03">CS-03 | Pouch 3 Soldas</option>
+            <option value="CS-04">CS-04 | Sacaria Pesada</option>
+            <option value="CS-05">CS-05 | Alça Fita Hece (Setup)</option>
+            <option value="CS-06">CS-06 | Bloquetadeira Automática</option>
+          </optgroup>
+          <optgroup label="🏗️ SETOR 1: EXTRUSÃO">
+            <option value="EX-01">EX-01 | Carnevalli 75mm (142 Kg/h)</option>
+            <option value="EX-02">EX-02 | Coex 3 Camadas Rulli</option>
+            <option value="EX-03">EX-03 | Monocamada 60mm (Setup)</option>
+            <option value="EX-04">EX-04 | Balão Tubular 90mm</option>
+          </optgroup>
+          <optgroup label="🎨 SETOR 2: IMPRESSÃO & REBOBINADEIRA">
+            <option value="IM-01">IM-01 | Flexográfica 6 Cores Feva</option>
+            <option value="IM-02">IM-02 | Flexo Gearless 8 Cores Comexi</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <!-- Ações do Kiosk -->
+      <div class="kiosk-header-right">
+        <div class="plant-clock" style="text-align: right;">
+          <div class="time font-mono" id="tabletClockTime" style="font-size: 1.15rem; font-weight: 800; color: white;">13:15:00</div>
+          <div class="shift" style="font-size: 0.7rem; color: #4ade80;"><span class="dot-status-inline"></span> Turno 1 (06h - 14h)</div>
+        </div>
+
+        <button class="btn-icon" id="btnToggleFullscreen" title="Alternar Tela Cheia (Modo Kiosk)" onclick="toggleKioskFullscreen()">
+          <span class="icon-svg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+          </span>
+        </button>
+      </div>
+    </header>
+
+    <!-- BANNER DE IDENTIFICAÇÃO DA OP ATIVA NA MÁQUINA -->
+    <div class="kiosk-op-banner">
+      <div class="kiosk-op-info">
+        <div class="kiosk-op-code" id="kioskOpCode">
+          <span class="icon-svg" style="color: #38bdf8;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/></svg>
+          </span>
+          <span>OP 2885-0004</span>
+          <span class="status-badge produzindo" style="font-size: 0.7rem;">PRIORIDADE ALTA</span>
+        </div>
+        <div class="kiosk-op-product" id="kioskOpProduct">
+          Saco Valvulado PEBD 240x350x0.08mm Pigmentado Branco
+        </div>
+        <div class="kiosk-op-client" id="kioskOpClient">
+          Cliente: Sacaria Soares Ltda | Meta: 120.000 un (4.500 Kg)
+        </div>
+      </div>
+
+      <div class="kiosk-op-actions">
+        <button class="btn-kiosk-touch secondary" onclick="openOpSearchModal()">
+          <span class="icon-svg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
+          </span>
+          <span>Trocar / Buscar OP</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- CONTEÚDO DINÂMICO AJUSTADO AO SETOR DA MÁQUINA -->
+    <main class="kiosk-main-content" id="kioskSectorContent">
+      <!-- Renderizado via JavaScript conforme o setor (Extrusão, Impressão ou Corte e Solda) -->
+    </main>
+
+  </div>
+
+  <!-- ====================================================================
+       MODAIS DO OPERADOR (QUALIDADE, REFUGO, BOBINA MÃE, TECLADO NUMÉRICO)
+       ==================================================================== -->
+
+  <!-- 1. CHECKLIST DE INSPEÇÃO PERIÓDICA DE QUALIDADE (3x POR BOBINA) -->
+  <div class="modal-backdrop" id="qualityInspectionModal" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="icon-svg" style="color: #38bdf8;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </span>
+          <h3 style="font-size: 1.15rem; font-weight: 800;">Inspeção Periódica de Qualidade (3x por Bobina)</h3>
+        </div>
+        <button class="btn-close-modal" onclick="document.getElementById('qualityInspectionModal').style.display='none'">×</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+        <p style="font-size: 0.85rem; color: var(--text-secondary);">
+          Gatilho automático obrigatório. O teste deve ser realizado no <strong>Início, Meio e Fim</strong> de cada bobina. Reprovações disparam alerta imediato ao Supervisor.
+        </p>
+
+        <div class="pin-input-group">
+          <label style="font-size: 0.85rem; font-weight: 700;">Etapa da Bobina Atual:</label>
+          <select id="inspEtapa" class="filter-select font-mono" style="font-size: 1rem; padding: 0.6rem;">
+            <option value="inicio">🟢 Início da Bobina</option>
+            <option value="meio" selected>🟡 Meio da Bobina</option>
+            <option value="fim">🔵 Fim da Bobina (Troca)</option>
+          </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="pin-input-group">
+            <label style="font-size: 0.85rem; font-weight: 700;">Largura Medida (mm):</label>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="number" class="filter-input font-mono" id="inspLargura" value="240" step="1" style="font-size: 1.25rem; font-weight: 800; flex: 1;" />
+              <button class="btn-secondary" onclick="openNumericKeypad('inspLargura', 'Largura Medida (mm)')">Teclado</button>
+            </div>
+            <small style="color: var(--text-muted); font-size: 0.75rem;">Nominal: 240mm (± 5mm)</small>
+          </div>
+
+          <div class="pin-input-group">
+            <label style="font-size: 0.85rem; font-weight: 700;">Espessura Aferida (µm):</label>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="number" class="filter-input font-mono" id="inspEspessura" value="80" step="1" style="font-size: 1.25rem; font-weight: 800; flex: 1;" />
+              <button class="btn-secondary" onclick="openNumericKeypad('inspEspessura', 'Espessura Aferida (µm)')">Teclado</button>
+            </div>
+            <small style="color: var(--text-muted); font-size: 0.75rem;">Nominal: 80µm (± 4µm)</small>
+          </div>
+        </div>
+
+        <div class="pin-input-group">
+          <label style="font-size: 0.85rem; font-weight: 700;">Teste de Resistência e Tração da Solda:</label>
+          <select id="inspSolda" class="filter-select font-mono" style="font-size: 1.1rem; font-weight: 800; padding: 0.6rem; border-color: #22c55e;">
+            <option value="aprovado">✅ APROVADO (Solda íntegra sem abertura)</option>
+            <option value="reprovado">❌ REPROVADO (Solda fria / rompimento / vazamento)</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="document.getElementById('qualityInspectionModal').style.display='none'">Cancelar</button>
+        <button class="btn-primary" onclick="saveQualityInspectionSubmit()">
+          Registrar e Transmitir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. APONTAMENTO DE REFUGO / SUCATA (Kg) -->
+  <div class="modal-backdrop" id="scrapModal" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="icon-svg" style="color: #ef4444;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+          </span>
+          <h3 style="font-size: 1.15rem; font-weight: 800;">Apontamento de Sucata / Refugo</h3>
+        </div>
+        <button class="btn-close-modal" onclick="document.getElementById('scrapModal').style.display='none'">×</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+        <div class="pin-input-group">
+          <label style="font-size: 0.85rem; font-weight: 700;">Peso do Descarte / Refugo (Kg):</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="number" class="filter-input font-mono" id="scrapWeightInput" value="12.5" step="0.5" style="font-size: 1.4rem; font-weight: 800; flex: 1;" />
+            <button class="btn-secondary" onclick="openNumericKeypad('scrapWeightInput', 'Digitar Peso Refugo (Kg)')">Teclado</button>
+          </div>
+        </div>
+
+        <div class="pin-input-group">
+          <label style="font-size: 0.85rem; font-weight: 700;">Motivo do Defeito / Descarte:</label>
+          <select id="scrapReasonSelect" class="filter-select font-mono" style="font-size: 0.95rem; padding: 0.6rem;">
+            <option value="Aparas de início e refile de corte">Aparas de início e refile de corte</option>
+            <option value="Solda vazando ou queima de barramento">Solda vazando ou queima de barramento</option>
+            <option value="Sanfona desalinhada / desvio de fotocélula">Sanfona desalinhada / desvio de fotocélula</option>
+            <option value="Variação de espessura vinda da Extrusão">Variação de espessura vinda da Extrusão</option>
+            <option value="Tinta descascando / sem tratamento Corona">Tinta descascando / sem tratamento Corona</option>
+            <option value="Engasgo de faca ou estática no barramento">Engasgo de faca ou estática no barramento</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="document.getElementById('scrapModal').style.display='none'">Cancelar</button>
+        <button class="btn-danger" onclick="saveScrapSubmit()">
+          Confirmar Descarte
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. CONCLUIR BOBINA MÃE (EXTRUSÃO) -->
+  <div class="modal-backdrop" id="concludeBobinaModal" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="icon-svg" style="color: #22c55e;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+          </span>
+          <h3 style="font-size: 1.15rem; font-weight: 800;">Concluir Bobina Mãe & Gerar QR Code</h3>
+        </div>
+        <button class="btn-close-modal" onclick="document.getElementById('concludeBobinaModal').style.display='none'">×</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+        <div class="pin-input-group">
+          <label style="font-size: 0.85rem; font-weight: 700;">Peso Bruto Aferido na Balança (Kg):</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="number" class="filter-input font-mono" id="bobinaWeightInput" value="285.0" step="0.5" style="font-size: 1.4rem; font-weight: 800; flex: 1;" />
+            <button class="btn-secondary" onclick="openNumericKeypad('bobinaWeightInput', 'Digitar Peso da Bobina (Kg)')">Teclado</button>
+          </div>
+          <small style="color: var(--text-muted); font-size: 0.75rem;">Tara do tubete padrão: 5,5 Kg</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="document.getElementById('concludeBobinaModal').style.display='none'">Cancelar</button>
+        <button class="btn-primary" onclick="saveBobinaMaeSubmit()">
+          Gerar Etiqueta & Liberar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. TECLADO NUMÉRICO POP-UP NATIVO (ÁREA DE TOQUE GIGANTE >= 64px PARA LUVAS) -->
+  <div class="numeric-keypad-overlay" id="numericKeypadOverlay" style="display: none;">
+    <div class="numeric-keypad-modal">
+      <div class="keypad-header">
+        <h4 id="keypadTitle">Digitação Numérica</h4>
+        <button class="btn-close-modal" onclick="closeKeypad()">×</button>
+      </div>
+
+      <div class="keypad-display font-mono" id="keypadDisplay">0</div>
+
+      <div class="keypad-grid">
+        <button class="keypad-btn" onclick="keypadPress('1')">1</button>
+        <button class="keypad-btn" onclick="keypadPress('2')">2</button>
+        <button class="keypad-btn" onclick="keypadPress('3')">3</button>
+        <button class="keypad-btn" onclick="keypadPress('4')">4</button>
+        <button class="keypad-btn" onclick="keypadPress('5')">5</button>
+        <button class="keypad-btn" onclick="keypadPress('6')">6</button>
+        <button class="keypad-btn" onclick="keypadPress('7')">7</button>
+        <button class="keypad-btn" onclick="keypadPress('8')">8</button>
+        <button class="keypad-btn" onclick="keypadPress('9')">9</button>
+        <button class="keypad-btn btn-clear" onclick="keypadPress('clear')">LIMPAR</button>
+        <button class="keypad-btn" onclick="keypadPress('0')">0</button>
+        <button class="keypad-btn" onclick="keypadPress('.')">,</button>
+        <button class="keypad-btn" style="grid-column: span 3; background: #334155;" onclick="keypadPress('backspace')">
+          <span style="margin-right: 6px;">⌫</span>
+          <span>APAGAR DÍGITO</span>
+        </button>
+        <button class="keypad-btn btn-confirm" onclick="keypadConfirm()">
+          CONFIRMAR VALOR
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../js/icons.js"></script>
+  <script src="../js/sync-bus.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/tablet.js"></script>
+  <script>
+    // Inicialização do Nó Operador no Barramento Inter-Sites
+    let currentMachineId = 'CS-01';
+
+    // Mock minimal app object para reutilizar TabletModule
+    window.App = {
+      db: window.PlastMES_DB.load(),
+      activeTab: 'tablet',
+      audioEnabled: true,
+      playPackSound() { window.SyncBus.playIndustrialSound('production-pack'); },
+      playWarningTone() { window.SyncBus.playIndustrialSound('andon-alert'); },
+      showToast(msg, type = 'info') {
+        let container = document.getElementById('toastContainer');
+        if (!container) {
+          container = document.createElement('div');
+          container.id = 'toastContainer';
+          container.className = 'toast-container';
+          document.body.appendChild(container);
+        }
+        const toast = document.createElement('div');
+        toast.className = `toast-notification ${type}`;
+        toast.innerHTML = `<div style="font-size: 0.9rem; font-weight: 700;">${msg}</div>`;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 3500);
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Inicializa o barramento com a função 'operador'
+      window.SyncBus.init({
+        role: 'operador',
+        machineId: currentMachineId,
+        title: 'Tablet Operador (' + currentMachineId + ')'
+      });
+
+      // 2. Monta o widget visual de nós conectados
+      window.SyncBus.mountPeerWidget('peerSyncWidget');
+
+      // 3. Inicializa módulo do tablet
+      window.TabletModule.init(window.App);
+      window.TabletModule.selectMachine(currentMachineId);
+
+      // Relógio do Kiosk
+      setInterval(() => {
+        const d = new Date();
+        const timeEl = document.getElementById('tabletClockTime');
+        if (timeEl) timeEl.textContent = d.toTimeString().split(' ')[0];
+      }, 1000);
+
+      // Escutar seletor de máquina
+      const sel = document.getElementById('tabletMachineSelector');
+      if (sel) {
+        sel.addEventListener('change', (e) => {
+          currentMachineId = e.target.value;
+          window.SyncBus.setMachineId(currentMachineId);
+          window.TabletModule.selectMachine(currentMachineId);
+        });
+      }
+
+      // =====================================================================
+      // INTERCOMUNICAÇÃO EM TEMPO REAL: ESCUTAR EVENTOS VINDOS DO SUPERVISOR
+      // =====================================================================
+
+      // A) O Supervisor/Preparador liberou o setup com PIN
+      window.SyncBus.on(window.SyncBus.EVENTS.SETUP_RELEASED, (msg) => {
+        const payload = msg.payload;
+        window.App.db = window.PlastMES_DB.load();
+        if (payload.machineId === currentMachineId) {
+          window.App.showToast(`🟢 SETUP LIBERADO pelo Preparador ${payload.preparadorNome}! Máquina pronta para rodar.`, 'success');
+          window.TabletModule.render();
+        } else {
+          window.App.showToast(`Aviso de Linha: Setup da máquina ${payload.machineId} foi liberado.`, 'info');
+        }
+      });
+
+      // B) O Supervisor atendeu e encerrou um chamado Andon
+      window.SyncBus.on(window.SyncBus.EVENTS.ANDON_RESOLVED, (msg) => {
+        const payload = msg.payload;
+        window.App.db = window.PlastMES_DB.load();
+        if (payload.machineId === currentMachineId) {
+          window.App.showToast(`✅ Chamado Andon atendido e finalizado pelo Supervisor!`, 'success');
+          window.TabletModule.render();
+        }
+      });
+
+      // C) O Supervisor alterou a prioridade de uma OP
+      window.SyncBus.on(window.SyncBus.EVENTS.OP_PRIORITY_CHANGED, (msg) => {
+        window.App.db = window.PlastMES_DB.load();
+        window.TabletModule.render();
+      });
+
+      // D) Estado do banco de dados atualizado externamente
+      window.SyncBus.on(window.SyncBus.EVENTS.STATE_SYNC_RESPONSE, () => {
+        window.App.db = window.PlastMES_DB.load();
+        window.TabletModule.render();
+      });
+    });
+
+    // Funções utilitárias de UI
+    function toggleKioskFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    }
+
+    function openOpSearchModal() {
+      window.TabletModule.openManualOpSearch();
+    }
+
+    function saveQualityInspectionSubmit() {
+      window.TabletModule.saveQualityInspection();
+      document.getElementById('qualityInspectionModal').style.display = 'none';
+    }
+
+    function saveScrapSubmit() {
+      window.TabletModule.saveScrap();
+      document.getElementById('scrapModal').style.display = 'none';
+    }
+
+    function saveBobinaMaeSubmit() {
+      window.TabletModule.saveBobinaMae();
+      document.getElementById('concludeBobinaModal').style.display = 'none';
+    }
+
+    // Teclado numérico nativo
+    let keypadBuffer = '';
+    let keypadTargetId = null;
+
+    function openNumericKeypad(targetId, title) {
+      keypadTargetId = targetId;
+      const targetInput = document.getElementById(targetId);
+      keypadBuffer = targetInput ? (targetInput.value || '') : '';
+      document.getElementById('keypadTitle').textContent = title || 'Digitação Numérica';
+      document.getElementById('keypadDisplay').textContent = keypadBuffer || '0';
+      document.getElementById('numericKeypadOverlay').style.display = 'flex';
+    }
+
+    function closeKeypad() {
+      document.getElementById('numericKeypadOverlay').style.display = 'none';
+      keypadTargetId = null;
+    }
+
+    function keypadPress(key) {
+      const disp = document.getElementById('keypadDisplay');
+      if (key === 'clear') {
+        keypadBuffer = '';
+      } else if (key === 'backspace') {
+        keypadBuffer = keypadBuffer.slice(0, -1);
+      } else if (key === '.') {
+        if (!keypadBuffer.includes('.')) {
+          keypadBuffer = keypadBuffer === '' ? '0.' : keypadBuffer + '.';
+        }
+      } else {
+        if (keypadBuffer === '0') keypadBuffer = key;
+        else keypadBuffer += key;
+      }
+      disp.textContent = keypadBuffer || '0';
+    }
+
+    function keypadConfirm() {
+      if (keypadTargetId) {
+        const targetInput = document.getElementById(keypadTargetId);
+        if (targetInput) {
+          targetInput.value = keypadBuffer || '0';
+          targetInput.dispatchEvent(new Event('input'));
+          targetInput.dispatchEvent(new Event('change'));
+        }
+      }
+      closeKeypad();
+    }
+  </script>
+</body>
+</html>
