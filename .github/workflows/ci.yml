@@ -1,0 +1,35 @@
+name: PlastMES CI Quality Pipeline
+
+on:
+  push:
+    branches: [ main, develop, "feat/**", "fix/**" ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  quality-gate:
+    name: Testes Automatizados & Validação de Arquitetura
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Executar Testes Automatizados (Node Native Test Runner)
+        run: npm test
+
+      - name: Validação de Sintaxe dos Scripts
+        run: |
+          node --check js/sync-bus.js
+          node --check js/data.js
+          node --check js/app.js
+          node --check js/dashboard.js
+          node --check js/supervisor.js
+          node --check js/tablet.js
+          node --check js/copilot.js
+          node --check js/ops.js
