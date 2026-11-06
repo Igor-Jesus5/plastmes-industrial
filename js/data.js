@@ -379,7 +379,7 @@ const INITIAL_DATA = {
   ]
 };
 
-// Gerenciador do Banco de Dados Local
+// Gerenciador do Banco de Dados Local-First Reativo
 const DB = {
   load() {
     try {
@@ -390,13 +390,19 @@ const DB = {
     } catch (e) {
       console.warn("Falha ao ler localStorage, utilizando dados iniciais padrão.", e);
     }
-    this.save(INITIAL_DATA);
+    this.save(INITIAL_DATA, false);
     return JSON.parse(JSON.stringify(INITIAL_DATA));
   },
 
-  save(data) {
+  save(data, broadcast = true) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      if (broadcast && window.SyncBus) {
+        window.SyncBus.publish(window.SyncBus.EVENTS.STATE_SYNC_RESPONSE, { db: data }, false);
+      }
+      if (window.dispatchEvent) {
+        window.dispatchEvent(new CustomEvent('plastmes:data-changed', { detail: data }));
+      }
     } catch (e) {
       console.error("Erro ao salvar no storage local", e);
     }
@@ -404,23 +410,308 @@ const DB = {
 
   reset() {
     localStorage.removeItem(STORAGE_KEY);
-    return this.load();
+    const fresh = this.load();
+    if (window.SyncBus) {
+      window.SyncBus.publish(window.SyncBus.EVENTS.STATE_SYNC_RESPONSE, { db: fresh });
+    }
+    return fresh;
   },
 
   // Simulação de fila de pacotes sincronizados com a Nuvem
   registerPacketSync(dbInstance) {
-    dbInstance.syncStatus.pendingPackets++;
+    if (!dbInstance || !dbInstance.syncStatus) return;
+    dbInstance.syncStatus.pendingPackets = (dbInstance.syncStatus.pendingPackets || 0) + 1;
     // Simula envio em lote para nuvem
     setTimeout(() => {
-      if (dbInstance.syncStatus.online) {
+      if (dbInstance.syncStatus && dbInstance.syncStatus.online) {
         dbInstance.syncStatus.pendingPackets = Math.max(0, dbInstance.syncStatus.pendingPackets - 1);
         dbInstance.syncStatus.lastSyncTimestamp = new Date().toISOString();
-        DB.save(dbInstance);
+        DB.save(dbInstance, false);
         if (window.dispatchEvent) {
           window.dispatchEvent(new CustomEvent('syncStatusUpdated', { detail: dbInstance.syncStatus }));
         }
       }
     }, 1200);
+  },
+
+  // =========================================================================
+  // MÉTODOS ATÔMICOS DE NEGÓCIO COM SINCRONIZAÇÃO EM TEMPO REAL
+  // =========================================================================
+
+  /**
+   * Registra apontamento de pacote (+1 Pacote)
+   */
+  addProductionPack(machineId, opId, operatorId, qtdPacotes = 1, qtdUnidades = 500, qtdKg = 22.5, modoPista = 'dupla') {
+    const data = this.load();
+    const machine = data.maquinas.find(m => m.id === machineId);
+    const op = data.ordensProducao.find(o => o.id === (opId || (machine && machine.opAtualId)));
+    const operador = data.operadores.find(o => o.id === (operatorId || (machine && machine.operadorId)));
+
+    // Incrementa contagem da máquina
+    if (machine) {
+      machine.pacotesTurno = (machine.pacotesTurno || 0) + qtdPacotes;
+      if (machine.status !== 'produzindo') {
+        machine.status = 'produzindo';
+      }
+    }
+
+    // Incrementa progresso da OP
+    if (op) {
+      op.qtdProduzidaUn = (op.qtdProduzidaUn || 0) + qtdUnidades;
+      op.qtdProduzidaKg = (op.qtdProduzidaKg || 0) + Math.round(qtdKg);
+    }
+
+    // Adiciona registro na tabela de apontamentos
+    const novoApontamento = {
+      id: "APT-" + Date.now().toString().slice(-6),
+      maquinaId: machineId,
+      operadorId: operador ? operador.id : 1,
+      opId: op ? op.id : "OP-2885-04",
+      dataHora: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      qtdPacotes: qtdPacotes,
+      qtdUnidades: qtdUnidades,
+      qtdKg: qtdKg,
+      modoPista: modoPista || (machine ? machine.modoPista : 'simples')
+    };
+
+    data.apontamentosProducao.unshift(novoApontamento);
+    this.save(data);
+
+    // Publica no barramento em tempo real
+    if (window.SyncBus) {
+      window.SyncBus.publish(window.SyncBus.EVENTS.PRODUCTION_RECORDED, {
+        machineId,
+        opId: novoApontamento.opId,
+        operatorName: operador ? operador.nome : 'Operador',
+        qtdPacotes,
+        qtdUnidades,
+        qtdKg,
+        totalPacotesMaquina: machine ? machine.pacotesTurno : 0,
+        novoApontamento
+      });
+    }
+
+    return { data, novoApontamento };
+  },
+
+  /**
+   * Registra refugo/sucata (Kg)
+   */
+  addScrapRecord(machineId, opId, operatorId, pesoKg, motivo, setorCulpado) {
+    const data = this.load();
+    const machine = data.maquinas.find(m => m.id === machineId);
+    const op = data.ordensProducao.find(o => o.id === (opId || (machine && machine.opAtualId)));
+    const operador = data.operadores.find(o => o.id === (operatorId || (machine && machine.operadorId)));
+
+    const novoRefugo = {
+      id: "REF-" + Date.now().toString().slice(-6),
+      maquinaId: machineId,
+      operadorId: operador ? operador.id : 1,
+      opId: op ? op.id : "OP-2885-04",
+      dataHora: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      pesoKg: parseFloat(pesoKg) || 0,
+      motivoDefeito: motivo || "Aparas e refile",
+      setorCulpado: setorCulpado || (machine ? machine.setor : "corte_solda")
+    };
+
+    data.apontamentosRefugo.unshift(novoRefugo);
+    this.save(data);
+
+    if (window.SyncBus) {
+      window.SyncBus.publish(window.SyncBus.EVENTS.SCRAP_RECORDED, {
+        machineId,
+        opId: novoRefugo.opId,
+        operatorName: operador ? operador.nome : 'Operador',
+        pesoKg: novoRefugo.pesoKg,
+        motivo: novoRefugo.motivoDefeito,
+        setorCulpado: novoRefugo.setorCulpado,
+        novoRefugo
+      });
+    }
+
+    return { data, novoRefugo };
+  },
+
+  /**
+   * Abre chamado Andon
+   */
+  openAndonCall(machineId, tipoChamado, solicitanteNome) {
+    const data = this.load();
+    const machine = data.maquinas.find(m => m.id === machineId);
+
+    if (machine) {
+      machine.status = 'chamado';
+    }
+
+    const novoChamado = {
+      id: "ANDON-" + Date.now().toString().slice(-6),
+      maquinaId: machineId,
+      tipoChamado: tipoChamado || "Suporte de Linha",
+      dataHoraAbertura: new Date().toISOString(),
+      dataHoraAtendimento: null,
+      status: "ativo",
+      solicitante: solicitanteNome || "Operador"
+    };
+
+    data.chamadosAndon.unshift(novoChamado);
+    this.save(data);
+
+    if (window.SyncBus) {
+      window.SyncBus.publish(window.SyncBus.EVENTS.ANDON_CALLED, {
+        chamadoId: novoChamado.id,
+        machineId,
+        tipoChamado: novoChamado.tipoChamado,
+        solicitante: novoChamado.solicitante,
+        dataHoraAbertura: novoChamado.dataHoraAbertura,
+        machineName: machine ? machine.nome : machineId,
+        setor: machine ? machine.setor : 'corte_solda'
+      });
+    }
+
+    return { data, novoChamado };
+  },
+
+  /**
+   * Supervisor/Preparador atende e resolve chamado Andon
+   */
+  resolveAndonCall(chamadoId, supervisorNome = "Supervisor de Turno") {
+    const data = this.load();
+    const chamado = data.chamadosAndon.find(c => c.id === chamadoId);
+
+    if (chamado) {
+      chamado.status = 'atendido';
+      chamado.dataHoraAtendimento = new Date().toISOString();
+      chamado.atendidoPor = supervisorNome;
+
+      // Se não houver outros chamados ativos na máquina, volta para produzindo
+      const outrosAtivos = data.chamadosAndon.some(c => c.maquinaId === chamado.maquinaId && c.status === 'ativo' && c.id !== chamadoId);
+      if (!outrosAtivos) {
+        const machine = data.maquinas.find(m => m.id === chamado.maquinaId);
+        if (machine && machine.status === 'chamado') {
+          machine.status = 'produzindo';
+        }
+      }
+    }
+
+    this.save(data);
+
+    if (window.SyncBus) {
+      window.SyncBus.publish(window.SyncBus.EVENTS.ANDON_RESOLVED, {
+        chamadoId,
+        machineId: chamado ? chamado.maquinaId : null,
+        atendidoPor: supervisorNome,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    return { data, chamado };
+  },
+
+  /**
+   * Liberação de Setup com PIN do Preparador
+   */
+  releaseSetup(machineId, preparadorNome = "Valter Camargo (Preparador)", pin = "1234") {
+    const data = this.load();
+    const machine = data.maquinas.find(m => m.id === machineId);
+
+    if (machine) {
+      machine.status = 'produzindo';
+    }
+
+    // Remove do array de setups pendentes
+    data.setupsPendentes = data.setupsPendentes.filter(s => s.maquinaId !== machineId);
+
+    this.save(data);
+
+    if (window.SyncBus) {
+      window.SyncBus.publish(window.SyncBus.EVENTS.SETUP_RELEASED, {
+        machineId,
+        preparadorNome,
+        pin,
+        timestamp: new Date().toISOString(),
+        machineName: machine ? machine.nome : machineId
+      });
+    }
+
+    return { data, machine };
+  },
+
+  /**
+   * Inspeção de Qualidade (Início, Meio ou Fim)
+   */
+  recordQualityInspection(machineId, bobinaId, operadorId, etapa, larguraMedida, soldaAprovada, espessuraMicras) {
+    const data = this.load();
+    const machine = data.maquinas.find(m => m.id === machineId);
+    const operador = data.operadores.find(o => o.id === (operadorId || (machine && machine.operadorId)));
+
+    const statusFinal = soldaAprovada ? 'aprovado' : 'reprovado';
+
+    const novaInspecao = {
+      id: "INSP-" + Date.now().toString().slice(-6),
+      bobinaId: bobinaId || "BOB-20261103-01",
+      maquinaId: machineId,
+      operadorId: operador ? operador.id : 1,
+      etapa: etapa || "meio",
+      dataHora: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      larguraMedidaMm: parseFloat(larguraMedida) || 240,
+      espessuraMedidaMicras: parseFloat(espessuraMicras) || 80,
+      soldaAprovada: !!soldaAprovada,
+      status: statusFinal,
+      observacoes: statusFinal === 'aprovado' ? 'Dentro dos parâmetros normais.' : 'REPROVADO: Disparo de alerta de lote suspeito!'
+    };
+
+    data.inspecoesQualidade.unshift(novaInspecao);
+
+    // Se reprovado, sinaliza máquina
+    if (!soldaAprovada && machine) {
+      // Abre chamado Andon de Qualidade automaticamente
+      data.chamadosAndon.unshift({
+        id: "ANDON-" + Date.now().toString().slice(-6),
+        maquinaId: machineId,
+        tipoChamado: "Alerta de Qualidade (Solda Reprovada)",
+        dataHoraAbertura: new Date().toISOString(),
+        dataHoraAtendimento: null,
+        status: "ativo",
+        solicitante: operador ? operador.nome : "Operador"
+      });
+      machine.status = 'chamado';
+    }
+
+    this.save(data);
+
+    if (window.SyncBus) {
+      window.SyncBus.publish(window.SyncBus.EVENTS.QUALITY_INSPECTED, {
+        machineId,
+        bobinaId: novaInspecao.bobinaId,
+        etapa: novaInspecao.etapa,
+        aprovado: soldaAprovada,
+        inspecao: novaInspecao,
+        operatorName: operador ? operador.nome : 'Operador'
+      });
+    }
+
+    return { data, novaInspecao };
+  },
+
+  /**
+   * Altera prioridade de uma OP
+   */
+  changeOpPriority(opId, novaPrioridade) {
+    const data = this.load();
+    const op = data.ordensProducao.find(o => o.id === opId);
+    if (op) {
+      op.prioridade = novaPrioridade;
+      this.save(data);
+
+      if (window.SyncBus) {
+        window.SyncBus.publish(window.SyncBus.EVENTS.OP_PRIORITY_CHANGED, {
+          opId,
+          numeroOP: op.numeroOP,
+          novaPrioridade
+        });
+      }
+    }
+    return { data, op };
   }
 };
 
