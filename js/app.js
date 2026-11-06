@@ -14,6 +14,7 @@ const App = {
 
   init() {
     this.db = window.PlastMES_DB.load();
+    this.initSyncBus();
     this.initNavigation();
     this.initClock();
     this.initSyncStatus();
@@ -33,6 +34,76 @@ const App = {
     });
 
     console.log("PlastMES Industrial carregado com sucesso. Arquitetura Edge Local-First pronta.");
+  },
+
+  // Barramento de Comunicação em Tempo Real Multi-Site
+  initSyncBus() {
+    if (!window.SyncBus) return;
+
+    window.SyncBus.init({
+      role: 'hub',
+      title: 'Hub Central PlastMES'
+    });
+
+    // Monta o widget se o elemento existir
+    window.SyncBus.mountPeerWidget('peerSyncWidget');
+
+    // Escuta todos os eventos para atualizar telas e ticker em tempo real
+    window.SyncBus.onAny((msg) => {
+      if (msg.type === window.SyncBus.EVENTS.HEARTBEAT) return;
+
+      this.logLiveEventToTicker(msg);
+
+      if (msg.type === window.SyncBus.EVENTS.ANDON_CALLED) {
+        this.showToast(`🚨 ANDON: Máquina ${msg.payload.machineId} chamou [${msg.payload.tipoChamado}]`, 'danger');
+      } else if (msg.type === window.SyncBus.EVENTS.SETUP_RELEASED) {
+        this.showToast(`🟢 SETUP LIBERADO na máquina ${msg.payload.machineId} por ${msg.payload.preparadorNome}`, 'success');
+      } else if (msg.type === window.SyncBus.EVENTS.PRODUCTION_RECORDED) {
+        this.showToast(`📦 +${msg.payload.qtdUnidades || 500} un apontadas na máquina ${msg.payload.machineId}`, 'info');
+      }
+
+      this.refreshAll();
+    });
+  },
+
+  logLiveEventToTicker(msg) {
+    const feed = document.getElementById('tickerLiveFeed');
+    if (!feed) return;
+
+    const timeStr = new Date().toTimeString().split(' ')[0];
+    let icon = '⚡';
+    let text = msg.type;
+
+    if (msg.type === window.SyncBus.EVENTS.PRODUCTION_RECORDED) {
+      icon = '📦';
+      text = `[${msg.payload.machineId}] +${msg.payload.qtdUnidades} un produzidas (${msg.payload.operatorName || 'Operador'})`;
+    } else if (msg.type === window.SyncBus.EVENTS.ANDON_CALLED) {
+      icon = '🚨';
+      text = `[${msg.payload.machineId}] Chamado: ${msg.payload.tipoChamado}`;
+    } else if (msg.type === window.SyncBus.EVENTS.SETUP_RELEASED) {
+      icon = '🟢';
+      text = `[${msg.payload.machineId}] Setup liberado pelo Preparador ${msg.payload.preparadorNome}`;
+    } else if (msg.type === window.SyncBus.EVENTS.SCRAP_RECORDED) {
+      icon = '🗑️';
+      text = `[${msg.payload.machineId}] Refugo: ${msg.payload.pesoKg} Kg (${msg.payload.motivo})`;
+    } else if (msg.type === window.SyncBus.EVENTS.QUALITY_INSPECTED) {
+      icon = msg.payload.aprovado ? '✅' : '❌';
+      text = `[${msg.payload.machineId}] Inspeção ${msg.payload.etapa}: ${msg.payload.aprovado ? 'Aprovado' : 'Reprovado'}`;
+    } else if (msg.type === window.SyncBus.EVENTS.NODE_ANNOUNCE) {
+      icon = '🛰️';
+      text = `Novo site conectado à rede: ${msg.sourceRole.toUpperCase()}`;
+    }
+
+    const item = document.createElement('span');
+    item.className = 'ticker-item';
+    item.innerHTML = `<span style="color:#38bdf8; font-weight:700;">[${timeStr}]</span> ${icon} <strong>${text}</strong>`;
+
+    feed.prepend(item);
+
+    // Limitar feed a 15 itens
+    while (feed.children.length > 15) {
+      feed.removeChild(feed.lastChild);
+    }
   },
 
   // Navegação entre as abas principais

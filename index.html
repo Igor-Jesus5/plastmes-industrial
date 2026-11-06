@@ -37,6 +37,8 @@
       </div>
 
       <!-- Indicador de Rede Dual (Edge Mini-PC Local vs Cloud Sync) -->
+      <div id="peerSyncWidget" style="margin-right: 0.5rem;"></div>
+
       <div class="dual-sync-pill" id="dualSyncPill" title="Clique para alternar modo Online/Offline e testar a resiliência">
         <div class="sync-node">
           <span class="sync-dot"></span>
@@ -70,9 +72,38 @@
     </header>
 
     <!-- ====================================================================
+         BARRA SUPERIOR DE LANÇAMENTO DOS 3 SITES INDEPENDENTES
+         ==================================================================== -->
+    <div class="multisite-nav-bar" style="background: #0a101d; border-bottom: 1px solid var(--border-medium); padding: 0.6rem 1.5rem;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <span class="badge-pwa-local" style="background: rgba(34, 197, 94, 0.2); color: #4ade80; border-color: #22c55e;">
+          ARQUITETURA 3 SITES DESACOPLADOS
+        </span>
+        <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">
+          Sites 100% independentes sincronizados via BroadcastChannel:
+        </span>
+      </div>
+      <div class="multisite-links-group">
+        <a href="site-operador/index.html" target="_blank" class="multisite-link-pill" style="border-color: #22c55e; color: #4ade80;" title="Abrir Site do Operador em nova janela">
+          <span>📱 Site Operador (Tablet) ↗</span>
+        </a>
+        <a href="site-supervisor/index.html" target="_blank" class="multisite-link-pill" style="border-color: #eab308; color: #facc15;" title="Abrir Site do Supervisor em nova janela">
+          <span>👷 Site Supervisor (Linha) ↗</span>
+        </a>
+        <a href="site-executivo/index.html" target="_blank" class="multisite-link-pill" style="border-color: #38bdf8; color: #38bdf8;" title="Abrir Site Executivo em nova janela">
+          <span>💼 Site Executivo (Dono & IA) ↗</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- ====================================================================
          BARRA DE NAVEGAÇÃO ENTRE MÓDULOS
          ==================================================================== -->
     <nav class="nav-tabs-bar">
+      <button class="nav-tab-btn" data-tab="multisite" id="tabBtnMultiSite" style="background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.4); color: #c084fc;">
+        <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="8" y1="21" y2="3"/><line x1="16" x2="16" y1="21" y2="3"/><line x1="12" x2="12" y1="17" y2="21"/></svg></span>
+        <span>🚀 Demonstrador 3 Telas ao Vivo (Side-by-Side)</span>
+      </button>
       <button class="nav-tab-btn active" data-tab="dashboard">
         <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span>
         <span>Portal Executivo (Dono & Balanço de Massa)</span>
@@ -100,6 +131,82 @@
          CONTAINER PRINCIPAL DAS TELAS
          ==================================================================== -->
     <main class="main-view-container">
+
+      <!-- ================================================================
+           ABA 0: DEMONSTRADOR MULTI-TELAS AO VIVO (3 SITES LADO A LADO)
+           ================================================================ -->
+      <section class="tab-pane" id="pane-multisite">
+        <div class="dashboard-header-bar">
+          <div class="dashboard-title">
+            <h2 style="display: flex; align-items: center; gap: 0.5rem;">
+              <span>Demonstrador Multi-Telas: 3 Sites Comunicando em Tempo Real</span>
+              <span class="badge-pwa-local" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border-color: #a855f7;">LIVE MESH</span>
+            </h2>
+            <p>Os 3 sites são 100% desacoplados. Teste clicando em "+1 Pacote" ou "Chamar Andon" no Tablet e veja o Supervisor e o Executivo reagirem ao vivo!</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn-secondary" onclick="simulatePackQuick()">
+              <span>📦 +1 Pacote (CS-01)</span>
+            </button>
+            <button class="btn-secondary" onclick="simulateAndonQuick()" style="border-color: #ef4444; color: #f87171;">
+              <span>🚨 Acionar Andon (CS-02)</span>
+            </button>
+            <button class="btn-secondary" onclick="simulateSetupQuick()" style="border-color: #eab308; color: #facc15;">
+              <span>🟢 Liberar Setup (CS-05)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Grade com os 3 Sites Integrados Lado a Lado -->
+        <div class="split-view-container">
+          <!-- FRAME 1: SITE DO OPERADOR -->
+          <div class="split-view-frame-wrapper">
+            <div class="split-view-frame-header">
+              <h4 style="color: #4ade80;">
+                <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><line x1="12" x2="12.01" y1="18" y2="18"/></svg></span>
+                <span>SITE 1: OPERADOR (TABLET 10")</span>
+              </h4>
+              <a href="site-operador/index.html" target="_blank" class="multisite-link-pill" style="padding: 0.2rem 0.5rem; font-size: 0.72rem;">Nova Janela ↗</a>
+            </div>
+            <iframe src="site-operador/index.html" class="split-view-iframe" id="frameOperador"></iframe>
+          </div>
+
+          <!-- FRAME 2: SITE DO SUPERVISOR -->
+          <div class="split-view-frame-wrapper">
+            <div class="split-view-frame-header">
+              <h4 style="color: #facc15;">
+                <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+                <span>SITE 2: SUPERVISOR (LINHA & ANDON)</span>
+              </h4>
+              <a href="site-supervisor/index.html" target="_blank" class="multisite-link-pill" style="padding: 0.2rem 0.5rem; font-size: 0.72rem;">Nova Janela ↗</a>
+            </div>
+            <iframe src="site-supervisor/index.html" class="split-view-iframe" id="frameSupervisor"></iframe>
+          </div>
+
+          <!-- FRAME 3: SITE EXECUTIVO -->
+          <div class="split-view-frame-wrapper">
+            <div class="split-view-frame-header">
+              <h4 style="color: #38bdf8;">
+                <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span>
+                <span>SITE 3: EXECUTIVO (PORTAL DO DONO)</span>
+              </h4>
+              <a href="site-executivo/index.html" target="_blank" class="multisite-link-pill" style="padding: 0.2rem 0.5rem; font-size: 0.72rem;">Nova Janela ↗</a>
+            </div>
+            <iframe src="site-executivo/index.html" class="split-view-iframe" id="frameExecutivo"></iframe>
+          </div>
+        </div>
+
+        <!-- Ticker de Eventos em Tempo Real -->
+        <div class="realtime-event-ticker">
+          <div class="ticker-label">
+            <span class="sync-dot pulse"></span>
+            <span>BARRAMENTO AO VIVO:</span>
+          </div>
+          <div class="ticker-feed" id="tickerLiveFeed">
+            <span class="ticker-item" style="color: #94a3b8;">Aguardando eventos dos 3 sites... (Clique em +1 Pacote ou Chamar Andon para disparar mensagens)</span>
+          </div>
+        </div>
+      </section>
 
       <!-- ================================================================
            ABA 1: DASHBOARD EXECUTIVO & PORTAL DO DONO
@@ -804,6 +911,7 @@
 
   <!-- Scripts da Aplicação MES -->
   <script src="js/icons.js"></script>
+  <script src="js/sync-bus.js"></script>
   <script src="js/data.js"></script>
   <script src="js/app.js"></script>
   <script src="js/dashboard.js"></script>
@@ -811,6 +919,30 @@
   <script src="js/tablet.js"></script>
   <script src="js/copilot.js"></script>
   <script src="js/ops.js"></script>
+
+  <script>
+    // Funções de simulação rápida para demonstrar o barramento em tempo real
+    function simulatePackQuick() {
+      if (window.PlastMES_DB) {
+        window.PlastMES_DB.addProductionPack('CS-01', 'OP-2885-04', 7, 1, 500, 22.5, 'dupla');
+        if (window.App) window.App.refreshAll();
+      }
+    }
+
+    function simulateAndonQuick() {
+      if (window.PlastMES_DB) {
+        window.PlastMES_DB.openAndonCall('CS-02', 'Ajuste de Solda Lateral e Faca', 'Operador CS-02');
+        if (window.App) window.App.refreshAll();
+      }
+    }
+
+    function simulateSetupQuick() {
+      if (window.PlastMES_DB) {
+        window.PlastMES_DB.releaseSetup('CS-05', 'Valter Camargo (Preparador)', '1234');
+        if (window.App) window.App.refreshAll();
+      }
+    }
+  </script>
 
   <!-- Service Worker para suporte PWA Offline Local-First -->
   <script>
