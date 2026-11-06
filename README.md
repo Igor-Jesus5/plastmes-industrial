@@ -4,95 +4,122 @@ Sistema MES (*Manufacturing Execution System*) completo em arquitetura **Local-F
 
 ---
 
-## Como Executar o Projeto
+## 🚀 Arquitetura 3 Sites Únicos & Comunicação em Tempo Real
+
+A aplicação foi estruturada em **3 sites front-end independentes e especializados**, que se comunicam instantaneamente em tempo real através da **BroadcastChannel API** nativa (com fallback automático para `StorageEvent`):
+
+| Site | Caminho Dedicado | Atalho Raiz | Perfil / Função |
+| :--- | :--- | :--- | :--- |
+| **Site 1: Operador** | `site-operador/index.html` | `operador.html` | Tablet Android 10" Kiosk, botões ≥ 64px (luvas), teclado numérico nativo em tela, Pista Dupla 2x, Checklist 3x, Andon. |
+| **Site 2: Supervisor** | `site-supervisor/index.html` | `supervisor.html` | Painel de Linha, filtro rigoroso por setor, cronômetro Andon decorrido em tempo real, Fila Kanban e Liberação de Setup com PIN (`1234`). |
+| **Site 3: Executivo** | `site-executivo/index.html` | `executivo.html` | Portal do Dono na nuvem, Balanço de Massa, fluxo em 3 blocos, tabela de produtividade do turno e Copiloto de IA PlastIA. |
+| **Hub Central** | `index.html` | `index.html` | Launchpad mestre com **Demonstrador 3 Telas ao Vivo (Side-by-Side Split View)** e ticker de eventos do barramento. |
+
+### ⚡ Como os Sites se Conversam entre si:
+- **Apontamento de Produção:** Ao clicar em `+1 Pacote (500 un)` no Site do Operador, o Balanço de Massa e a Tabela de Produtividade do Site Executivo atualizam no mesmo instante com efeito visual de pulso.
+- **Chamados Andon:** Ao clicar em `Chamar Manutenção` ou `Chamar Preparador` no Site do Operador, o Site do Supervisor aciona alarme sonoro, pisca a notificação e adiciona o chamado à fila com cronômetro dinâmico a cada segundo.
+- **Liberação de Setup com PIN:** Quando o Supervisor/Preparador digita o PIN (`1234`) para liberar uma máquina em regulagem, o Tablet do Operador recebe o sinal instantâneo, desbloqueia a máquina para 🟢 **PRODUZINDO** e toca a melodia de confirmação.
+- **Telemetria Mesh de Rede:** Cada site exibe no topo o badge `REDE MESH INTER-SITES` indicando a quantidade de nós conectados (ex: `📱 Operador | 👷 Supervisor | 💼 Executivo`).
+
+---
+
+## 🛠️ Como Executar o Projeto
 
 Como o projeto foi construído puramente com **HTML5, CSS3 moderno e JavaScript modular (ES6+)**, você pode executá-lo de qualquer uma das formas abaixo:
 
-1. **Abrir Diretamente no Navegador:**
-   - Dê um duplo-clique no arquivo `index.html` em qualquer navegador moderno (Google Chrome, Edge, Safari, Firefox).
+1. **Demonstração Multi-Telas Integrada (Recomendado):**
+   - Dê duplo-clique no arquivo `index.html` e abra a aba **"🚀 Demonstrador 3 Telas ao Vivo"** para ver os 3 sites conversando lado a lado em uma única tela!
 
-2. **Executar via Servidor Local (Recomendado para PWA / Service Worker):**
+2. **Abrir os 3 Sites em Janelas/Abas Separadas:**
+   - Abra `site-operador/index.html` (ou `operador.html`)
+   - Abra `site-supervisor/index.html` (ou `supervisor.html`)
+   - Abra `site-executivo/index.html` (ou `executivo.html`)
+   - Posicione as janelas lado a lado e faça testes de apontamento e chamados Andon.
+
+3. **Executar via Servidor HTTP Local:**
    ```bash
    # Utilizando Node.js:
    npx serve .
    # ou
    npx http-server .
    ```
-   Acesse no navegador: `http://localhost:3000` ou `http://localhost:8080`.
 
 ---
 
-## Estrutura de Arquivos Organizada
+## 🧪 Testes Automatizados & Esteira de Qualidade
+
+O projeto conta com uma suíte de testes unitários e de integração utilizando o **Node.js Native Test Runner** (`node:test`):
+
+```bash
+# Executar a suíte de testes:
+npm test
+```
+
+### O que é testado:
+- ✅ **12 Máquinas nos 3 Setores:** Validação de integridade de Extrusão, Impressão e Corte e Solda.
+- ✅ **Apontamento de Pacotes:** Incremento de unidades, kg e contadores de máquina e OPs.
+- ✅ **Apontamento de Refugo:** Registro de sucata em Kg, motivo e setor responsável.
+- ✅ **Ciclo de Vida do Andon:** Abertura pelo operador, transição de cores e resolução pelo supervisor.
+- ✅ **Liberação de Setup:** Validação de checklist técnico e digitação de PIN do preparador.
+- ✅ **Checklist de Qualidade 3x:** Tolerância de largura (240mm ± 5mm) e disparo de alerta em caso de solda fria.
+- ✅ **Balanço de Massa:** Conservação de polímeros (Resina Entrada vs Acabado vs Sucata) na faixa industrial de 90-99%.
+- ✅ **Validação da Arquitetura Multi-Site:** Existência e desacoplamento dos 3 sites independentes e conexão ao `sync-bus.js`.
+
+---
+
+## 📂 Estrutura de Arquivos Organizada
 
 ```text
 Plástico Geral/
-├── index.html                  # Single Page Application (SPA) com navegação integrada
+├── index.html                  # Hub Central & Modo Multi-Telas Side-by-Side ao Vivo
+├── operador.html               # Atalho de entrada para o Site do Operador
+├── supervisor.html             # Atalho de entrada para o Site do Supervisor
+├── executivo.html              # Atalho de entrada para o Site Executivo
+├── package.json                # Manifesto do projeto e scripts de teste
+├── PROJECT_GUIDELINES.md       # Diretrizes de engenharia, issues, PRs e motion principles
+├── README.md                   # Documentação técnica e operacional
 ├── manifest.json               # Manifesto PWA (Modo Kiosk / Android 10" Fullscreen)
 ├── sw.js                       # Service Worker com estratégia Cache-First (Resiliência Offline)
 │
-├── assets/
-│   └── logo.svg                # Identidade visual industrial PlastMES
+├── site-operador/              # [SITE 1] Terminal Tablet 10" de Chão de Fábrica
+│   └── index.html              # Interface Kiosk, botões >= 64px, teclado numérico, Pista Dupla
+│
+├── site-supervisor/            # [SITE 2] Painel do Supervisor & Preparador
+│   └── index.html              # Filtro rigoroso por setor, Central Andon e Liberação PIN
+│
+├── site-executivo/             # [SITE 3] Portal Executivo do Dono & Nuvem
+│   └── index.html              # Balanço de massa, OEE, produtividade e Copiloto PlastIA
+│
+├── tests/                      # Esteira de Testes Automatizados
+│   ├── db.test.js              # Testes unitários do banco de dados e regras MES
+│   └── architecture.test.js    # Testes de integridade da arquitetura multi-site
+│
+├── .github/workflows/          # Automação de CI/CD
+│   └── ci.yml                  # Pipeline de validação e testes automáticos no GitHub
 │
 ├── css/
-│   ├── main.css                # Design system, ícones SVG, cores Andon normatizadas e layout
-│   ├── dashboard.css           # Balanço de massa, fluxo sequencial em 3 blocos e tabela de produtividade
-│   ├── tablet.css              # Interface Kiosk 10", botões >= 64px (luvas) e teclado numérico em tela
-│   └── components.css          # Painel do supervisor, Kanban, modais, alertas e chat da IA PlastIA
+│   ├── main.css                # Design system, cores Andon normatizadas e layout base
+│   ├── dashboard.css           # Balanço de massa, fluxo em 3 blocos e produtividade
+│   ├── tablet.css              # Interface Kiosk 10", ergonomia para luvas e teclado numérico
+│   └── components.css          # Modais, widget de sincronização peer-sync e split-view
 │
 └── js/
-    ├── icons.js                # Biblioteca de ícones vetoriais SVG industriais (100% offline)
-    ├── data.js                 # Banco de dados Local-First (PostgreSQL/Edge simulado) no localStorage
-    ├── app.js                  # Orquestrador central, áudio industrial (Web Audio API) e simulação ao vivo
-    ├── dashboard.js            # KPIs executivos, rendimento de polímeros e produtividade do turno
-    ├── supervisor.js           # Filtro rigoroso por setor, Andon em tempo real e liberação de setup com PIN
-    ├── tablet.js               # Terminal do tablet, Pista Dupla (2x), contador de pacotes e checklist 3x
-    ├── copilot.js              # Copiloto de IA Executivo (PlastIA) com linguagem natural e diagnóstico
-    └── ops.js                  # Gestão administrativa de OPs, Ficha Técnica em JSON e rastreabilidade QR
+    ├── sync-bus.js             # Barramento em Tempo Real Inter-Sites (BroadcastChannel + Heartbeat)
+    ├── data.js                 # Banco de Dados Local-First Reativo com Métodos Atômicos
+    ├── app.js                  # Orquestrador central e simulação de fábrica
+    ├── dashboard.js            # KPIs executivos, rendimento e produtividade do turno
+    ├── supervisor.js           # Filtro por setor, Andon dinâmico e setup com PIN
+    ├── tablet.js               # Terminal tablet, Pista Dupla (2x), pacotes e checklist 3x
+    ├── copilot.js              # Copiloto de IA Executivo (PlastIA) com linguagem natural
+    ├── ops.js                  # Gestão administrativa de OPs e Ficha Técnica JSON
+    └── icons.js                # Biblioteca vetorial de ícones SVG industriais (100% offline)
 ```
 
 ---
 
-## Funcionalidades Implementadas
+## 📋 Padrões de Git & Contribuição
 
-### 1. Dashboard Executivo & Portal do Dono
-- **Balanço de Massa & Rendimento:** Cálculo automático de Resina Virgem Entrada (Extrusão) vs. Produto Conforme Entregue (Corte e Solda) vs. Total de Sucata/Refugo (Kg e %). Barra visual dinâmica de aproveitamento.
-- **Fluxo Sequencial por Setor:**
-  - **Setor 1 (Extrusão):** Máquinas EX-01 a EX-04 com produtividade em Kg/h e % de refugo de balão.
-  - **Setor 2 (Impressão & Rebobinadeira):** Máquinas IM-01 e IM-02 com velocidade em m/min e acerto Pantone.
-  - **Setor 3 (Corte e Solda):** Máquinas CS-01 a CS-06 com ritmo em sacos/min, pacotes e indicador de Pista Dupla.
-- **Tabela de Produtividade do Turno:** Filtragem por colaborador, setor e turno com status visual e badges corporativas por iniciais.
-
-### 2. Painel do Supervisor & Preparador
-- **Organização Rigorosa por Setor:** Abas superiores exclusivas `[ Setor 1: Extrusão | Setor 2: Impressão | Setor 3: Corte e Solda ]` sem misturar máquinas de setores distintos.
-- **Central de Chamados Andon:** Visualização com cronômetro decorrido dinâmico a cada segundo (`há 4 min`) e encerramento com 1 clique.
-- **Fila Kanban de OPs:** Priorização e ordenação das Ordens de Produção.
-- **Liberação de Setup com PIN:** Checklist técnico com digitação de PIN do preparador (ex: `1234` ou `0000`) para transição de Amarelo (Setup) para Verde (Produzindo).
-
-### 3. Terminal Tablet 10" de Máquina (Chão de Fábrica Kiosk)
-- **Ergonomia Industrial:** Todos os botões principais possuem área de toque **>= 64px**, permitindo operação com luvas ou mãos com óleo.
-- **Teclado Numérico Nativo Pop-up:** Substitui o teclado do sistema operacional para digitação direta em tela de OPs, pesos e medições.
-- **Chave Pista Simples / Pista Dupla (Toggle):**
-  - Em **Pista Dupla**, exibe 2 cards independentes (Bobina 1 e Bobina 2) permitindo troca individual de bobina sem interromper o outro lado.
-  - Multiplicador de contagem automático (2 unidades por golpe do barramento).
-- **Contador com Botão Gigante `+1 Pacote (500 un)`:** Feedback sonoro com Web Audio API.
-- **Checklist Periódico de Qualidade (3x por Bobina):** Aferição de Início, Meio e Fim (Largura 240mm ± 5mm, espessura e teste de tração da solda). Dispara marcação de lote suspeito e alerta imediato caso reprovado.
-- **Apontamento de Refugo:** Registro imediato de peso em Kg e motivo do defeito.
-- **Botões Rápidos Andon:** `Chamar Preparador`, `Chamar Manutenção` e `Chamar Qualidade`.
-
-### 4. Gestão Administrativa de OPs & Fichas Técnicas
-- Inspeção de Fichas Técnicas de Engenharia com formulações de resina (PEBD, PEAD, Masterbatch, Zonas Z1-Z5 em 168°C-180°C).
-- Exportação e visualização da estrutura relacional em JSON (`Ficha_Tecnica_JSON`).
-- Tabela de rastreabilidade de Bobinas-Mãe com geração de etiquetas QR Code.
-
-### 5. Copiloto de IA Executivo (PlastIA)
-- Assistente interativo em linguagem natural conectado ao banco de dados em tempo real.
-- Consultas prontas e customizadas:
-  - *"Qual máquina teve maior refugo e qual o motivo?"*
-  - *"A OP do cliente Sacaria Soares vai atrasar?"*
-  - *"Quem foi o operador mais eficiente no turno?"*
-  - *"Gerar resumo executivo completo do turno atual"*
-  - *"Detectar desvios de temperatura e anomalias nas extrusoras"*
-
-### 6. PWA & Resiliência Offline (Local-First)
-- O chão de fábrica opera 100% no servidor Edge local, sem dependência de internet externa.
-- Indicador dual no cabeçalho permite alternar e testar o funcionamento offline com retenção e sincronização automática de pacotes para a Nuvem.
+Conforme documentado em `PROJECT_GUIDELINES.md`:
+- **Issues Obrigatórias:** Categorizadas como `[Nova função]`, `[Melhoria]` ou `[Correção]`.
+- **Pull Requests Estruturados:** Contendo Issue Relacionada, O Que Mudou, Como Foi Validado, Riscos/Limitações e Próximos Passos.
+- **Motion Principles:** Transições fluidas, skeletons, haptics visuais e feedback consistente.

@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PlastMES - Portal Executivo & IA (Portal do Dono & Gestão Cloud)</title>
+  
+  <!-- PWA & Meta -->
+  <meta name="theme-color" content="#080d16">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="../manifest.json">
+
+  <!-- Estilos Modulares -->
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/components.css">
+</head>
+<body>
+  <div id="app">
+    
+    <!-- BARRA DE NAVEGAÇÃO ENTRE OS 3 SITES DESACOPLADOS -->
+    <div class="multisite-nav-bar">
+      <div class="multisite-nav-brand">
+        <span class="icon-svg" style="color: #38bdf8;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+        </span>
+        <span>PLASTMES INDUSTRIAL — SITE 3: PORTAL DO DONO & IA</span>
+      </div>
+
+      <!-- Widget de Conexão com os outros sites conectados em tempo real -->
+      <div id="peerSyncWidget"></div>
+
+      <div class="multisite-links-group">
+        <a href="../site-operador/index.html" target="_blank" class="multisite-link-pill popout" title="Abrir Site do Operador em nova janela">
+          <span>📱 Abrir Operador ↗</span>
+        </a>
+        <a href="../site-supervisor/index.html" target="_blank" class="multisite-link-pill popout" title="Abrir Site do Supervisor em nova janela">
+          <span>👷 Abrir Supervisor ↗</span>
+        </a>
+        <a href="index.html" class="multisite-link-pill current" title="Você está no Site Executivo">
+          <span>💼 Executivo</span>
+        </a>
+        <a href="../index.html" class="multisite-link-pill" title="Voltar ao Hub Central e Modo Multi-Telas">
+          <span>🏠 Hub Central</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- CABEÇALHO EXECUTIVO GLOBAL COM CLOUD SYNC -->
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="brand-logo-badge icon-svg" style="color: #38bdf8;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/></svg>
+        </div>
+        <div class="brand-title">
+          <h1>PLASTMES EXECUTIVO (PORTAL DO DONO)</h1>
+          <p>
+            <span>Balanço de Massa, Produtividade do Turno e Copiloto de IA Gerencial</span>
+            <span class="badge-pwa-local" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border-color: #38bdf8;">CLOUD ACCESS</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Indicador de Rede Dual (Edge Local vs Cloud Sync) -->
+      <div class="dual-sync-pill" id="dualSyncPill" title="Status da Sincronização em Nuvem (Supabase)">
+        <div class="sync-node">
+          <span class="sync-dot"></span>
+          <span>Edge Mini-PC Local</span>
+        </div>
+        <span class="sync-separator">|</span>
+        <div class="sync-node">
+          <span class="sync-dot pulse" id="cloudSyncDot"></span>
+          <span id="cloudSyncLabel">Nuvem Conectada</span>
+          <span class="badge-pwa-local" id="syncPendingBadge" style="display:none;">0 retidos</span>
+        </div>
+      </div>
+
+      <!-- Relógio e Ações -->
+      <div class="header-actions">
+        <div class="plant-clock">
+          <div class="time font-mono" id="execClockTime">13:15:00</div>
+          <div class="shift"><span class="dot-status-inline"></span> Turno 1 (06h - 14h)</div>
+        </div>
+
+        <button class="btn-secondary" onclick="exportExecutiveReport()">
+          <span class="icon-svg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+          </span>
+          <span>Exportar Relatório</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- NAVEGAÇÃO INTERNA ENTRE ABAS EXECUTIVAS -->
+    <nav class="nav-tabs-bar">
+      <button class="nav-tab-btn active" data-tab="dashboard" id="tabBtnDashboard">
+        <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span>
+        <span>Visão Geral & Balanço de Massa</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="copilot" id="tabBtnCopilot">
+        <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></span>
+        <span>Copiloto de IA Executivo (PlastIA)</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="ops" id="tabBtnOps">
+        <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg></span>
+        <span>OPs & Fichas Técnicas de Engenharia</span>
+      </button>
+    </nav>
+
+    <!-- CONTEÚDO PRINCIPAL DAS ABAS -->
+    <main class="main-view-container">
+
+      <!-- ================================================================
+           ABA 1: VISÃO GERAL, BALANÇO DE MASSA E PRODUTIVIDADE
+           ================================================================ -->
+      <section class="tab-pane active" id="pane-dashboard">
+        <div class="dashboard-header-bar">
+          <div class="dashboard-title">
+            <h2>Visão Geral do Parque Industrial & Rendimento</h2>
+            <p>Monitoramento em tempo real do fluxo de massa, OEE e eficiência por operador</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn-primary" onclick="switchExecTab('copilot')">
+              <span class="icon-svg"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg></span>
+              <span>Diagnóstico com PlastIA</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 5.3 BALANÇO DE MASSA E KPIS GLOBAIS -->
+        <div class="mass-balance-container" id="massBalanceWidget">
+          <!-- Renderizado dinamicamente via JS -->
+        </div>
+
+        <!-- 5.1 VISÃO GERAL DO GALPÃO: FLUXO SEQUENCIAL EM 3 BLOCOS -->
+        <div class="flow-blocks-wrapper">
+          <div class="section-title">
+            <h3>Fluxo Sequencial do Galpão Industrial (3 Setores Produtivos)</h3>
+            <span class="badge-tag">Monitoramento em Tempo Real</span>
+          </div>
+
+          <div class="flow-blocks-grid">
+            <!-- BLOCO 1: EXTRUSÃO -->
+            <div class="flow-sector-block">
+              <div class="flow-block-header">
+                <div class="flow-block-title">
+                  <span class="sector-num-badge">1</span>
+                  <span>EXTRUSÃO (Filme Plástico)</span>
+                </div>
+                <div class="flow-block-metric font-mono" id="metric-extrusao-total">...</div>
+              </div>
+              <div class="flow-machines-list" id="flow-machines-extrusao"></div>
+            </div>
+
+            <!-- BLOCO 2: IMPRESSÃO & REBOBINADEIRA -->
+            <div class="flow-sector-block">
+              <div class="flow-block-header">
+                <div class="flow-block-title">
+                  <span class="sector-num-badge">2</span>
+                  <span>IMPRESSÃO & REBOBINADEIRA</span>
+                </div>
+                <div class="flow-block-metric font-mono" id="metric-impressao-total">...</div>
+              </div>
+              <div class="flow-machines-list" id="flow-machines-impressao"></div>
+            </div>
+
+            <!-- BLOCO 3: CORTE E SOLDA -->
+            <div class="flow-sector-block">
+              <div class="flow-block-header">
+                <div class="flow-block-title">
+                  <span class="sector-num-badge">3</span>
+                  <span>CORTE E SOLDA (Embalagens)</span>
+                </div>
+                <div class="flow-block-metric font-mono" id="metric-corte-total">...</div>
+              </div>
+              <div class="flow-machines-list" id="flow-machines-corte"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5.2 TABELA DE PRODUTIVIDADE DO TURNO (POR FUNCIONÁRIO E MÁQUINA) -->
+        <div class="productivity-table-card">
+          <div class="table-card-header">
+            <div>
+              <h3>Produtividade do Turno por Colaborador & Máquina</h3>
+              <p style="font-size: 0.8rem; color: var(--text-secondary);">
+                Acompanhamento individual de rendimento, modo de pista, refugo gerado e atingimento da meta
+              </p>
+            </div>
+
+            <!-- Filtros Rápidos -->
+            <div class="table-filters-row">
+              <input type="text" class="filter-input" id="dashSearchOperator" placeholder="Buscar colaborador..." />
+              <select class="filter-select" id="dashFilterSector">
+                <option value="todos">Todos os Setores</option>
+                <option value="extrusao">Extrusão</option>
+                <option value="impressao">Impressão</option>
+                <option value="corte_solda">Corte e Solda</option>
+              </select>
+              <select class="filter-select" id="dashFilterShift">
+                <option value="todos">Todos os Turnos</option>
+                <option value="Turno 1 (06h - 14h)">Turno 1</option>
+                <option value="Turno 2 (14h - 22h)">Turno 2</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="industrial-table">
+              <thead>
+                <tr>
+                  <th>COLABORADOR</th>
+                  <th>MÁQUINA / SETOR</th>
+                  <th>TURNO</th>
+                  <th>MODO PISTA</th>
+                  <th>TOTAL PRODUZIDO</th>
+                  <th>REFUGO</th>
+                  <th>EFICIÊNCIA (OEE)</th>
+                  <th>STATUS</th>
+                </tr>
+              </thead>
+              <tbody id="productivityTableBody">
+                <!-- Linhas preenchidas via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           ABA 2: COPILOTO DE IA EXECUTIVO (PLASTIA)
+           ================================================================ -->
+      <section class="tab-pane" id="pane-copilot">
+        <div class="copilot-container">
+          <div class="copilot-header">
+            <div class="copilot-avatar">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+            </div>
+            <div>
+              <h3>PlastIA — Copiloto de Inteligência Artificial Gerencial</h3>
+              <p>Análise de dados do chão de fábrica, detecção preditiva de desvios e resumos executivos</p>
+            </div>
+          </div>
+
+          <!-- Sugestões de Perguntas Rápidas (Chips) -->
+          <div class="quick-prompts-bar">
+            <button class="btn-quick-prompt" data-query="Gerar Resumo Executivo do Turno 1">📊 Resumo do Turno 1</button>
+            <button class="btn-quick-prompt" data-query="Qual máquina teve maior índice de refugo e por quê?">⚠️ Máquina com Maior Refugo?</button>
+            <button class="btn-quick-prompt" data-query="A OP 2885-0004 da Sacaria Soares vai atrasar?">⏱️ Previsão da OP Sacaria Soares</button>
+            <button class="btn-quick-prompt" data-query="Quem foi o operador mais eficiente no turno atual?">🏆 Operador Mais Eficiente</button>
+            <button class="btn-quick-prompt" data-query="Detectar desvios de temperatura e anomalias nas extrusoras">🌡️ Desvios de Temperatura</button>
+          </div>
+
+          <!-- Histórico de Mensagens do Chat -->
+          <div class="copilot-chat-history" id="copilotChatHistory">
+            <div class="chat-message assistant">
+              <div class="chat-msg-head">
+                <span class="chat-msg-author">PlastIA Copilot</span>
+                <span class="chat-msg-time">Agora</span>
+              </div>
+              <div class="chat-msg-body">
+                Olá, Gestor! Analisei os dados em tempo real da fábrica:
+                <br><br>
+                • <strong>Balanço de Massa:</strong> Rendimento geral em <strong>96.4%</strong>.<br>
+                • <strong>Máquinas Ativas:</strong> 10 em produção normal, 2 em setup e 0 paradas graves.<br>
+                • <strong>Alertas Recentes:</strong> O lote da máquina CS-01 segue com excelente solda. A extrusora EX-03 aguarda liberação de setup.<br><br>
+                Como posso ajudar em sua tomada de decisão estratégica hoje?
+              </div>
+            </div>
+          </div>
+
+          <!-- Campo de Digitação -->
+          <div class="copilot-input-bar">
+            <input type="text" class="copilot-input-field" id="copilotInput" placeholder="Faça uma pergunta gerencial em linguagem natural sobre a produção..." />
+            <button class="btn-primary" id="btnCopilotSend">
+              <span>Perguntar à IA</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           ABA 3: GESTÃO DE OPS & FICHAS TÉCNICAS (ADMINISTRATIVO)
+           ================================================================ -->
+      <section class="tab-pane" id="pane-ops">
+        <div style="display: grid; grid-template-columns: 380px 1fr; gap: 1.5rem;">
+          <div class="ops-list-container">
+            <div class="table-card-header" style="border-bottom: 1px solid var(--border-medium); padding-bottom: 0.75rem;">
+              <h3 style="font-size: 1.1rem; font-weight: 800;">Ordens de Produção (OPs)</h3>
+            </div>
+            <div id="opsListContainer" style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
+              <!-- Lista renderizada via JS -->
+            </div>
+          </div>
+
+          <div class="op-detail-container" id="opDetailPanel">
+            <!-- Detalhes da Ficha Técnica e JSON renderizados via JS -->
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="../js/icons.js"></script>
+  <script src="../js/sync-bus.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/dashboard.js"></script>
+  <script src="../js/copilot.js"></script>
+  <script src="../js/ops.js"></script>
+  <script>
+    // Inicialização do Nó Executivo no Barramento Inter-Sites
+    window.App = {
+      db: window.PlastMES_DB.load(),
+      activeTab: 'dashboard',
+      audioEnabled: true,
+      showToast(msg, type = 'info') {
+        let container = document.getElementById('toastContainer');
+        if (!container) {
+          container = document.createElement('div');
+          container.id = 'toastContainer';
+          container.className = 'toast-container';
+          document.body.appendChild(container);
+        }
+        const toast = document.createElement('div');
+        toast.className = `toast-notification ${type}`;
+        toast.innerHTML = `<div style="font-size: 0.9rem; font-weight: 700;">${msg}</div>`;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Inicializa o barramento com a função 'executivo'
+      window.SyncBus.init({
+        role: 'executivo',
+        title: 'Portal Executivo & Dono'
+      });
+
+      // 2. Monta o widget visual de nós conectados
+      window.SyncBus.mountPeerWidget('peerSyncWidget');
+
+      // 3. Inicializa módulos
+      window.DashboardModule.init(window.App);
+      window.CopilotModule.init(window.App);
+      window.OpsModule.init(window.App);
+
+      // Relógio
+      setInterval(() => {
+        const d = new Date();
+        const timeEl = document.getElementById('execClockTime');
+        if (timeEl) timeEl.textContent = d.toTimeString().split(' ')[0];
+      }, 1000);
+
+      // Navegação entre abas
+      setupNavTabs();
+
+      // =====================================================================
+      // INTERCOMUNICAÇÃO EM TEMPO REAL: ESCUTAR APONTAMENTOS DO OPERADOR
+      // =====================================================================
+
+      // A) Operador clicou "+1 Pacote" no tablet
+      window.SyncBus.on(window.SyncBus.EVENTS.PRODUCTION_RECORDED, (msg) => {
+        const payload = msg.payload;
+        window.App.db = window.PlastMES_DB.load();
+
+        // Atualiza Balanço de Massa e Fluxo Sequencial
+        window.DashboardModule.render();
+
+        // Pulso animado no bloco de Corte e Solda
+        const block = document.getElementById('metric-corte-total');
+        if (block) {
+          block.classList.add('live-pulse-update');
+          setTimeout(() => block.classList.remove('live-pulse-update'), 2000);
+        }
+
+        window.App.showToast(`📊 Apontamento ao vivo: +${payload.qtdUnidades || 500} un produzidas na máquina ${payload.machineId} (${payload.operatorName || 'Operador'})`, 'success');
+      });
+
+      // B) Operador apontou refugo de sucata
+      window.SyncBus.on(window.SyncBus.EVENTS.SCRAP_RECORDED, (msg) => {
+        const payload = msg.payload;
+        window.App.db = window.PlastMES_DB.load();
+        window.DashboardModule.render();
+        window.App.showToast(`⚠️ Refugo apontado na máquina ${payload.machineId}: ${payload.pesoKg} Kg (${payload.motivo})`, 'warning');
+      });
+
+      // C) Chamado Andon ou Setup liberado
+      window.SyncBus.on(window.SyncBus.EVENTS.ANDON_CALLED, () => {
+        window.App.db = window.PlastMES_DB.load();
+        window.DashboardModule.render();
+      });
+
+      window.SyncBus.on(window.SyncBus.EVENTS.SETUP_RELEASED, () => {
+        window.App.db = window.PlastMES_DB.load();
+        window.DashboardModule.render();
+      });
+
+      window.SyncBus.on(window.SyncBus.EVENTS.ANDON_RESOLVED, () => {
+        window.App.db = window.PlastMES_DB.load();
+        window.DashboardModule.render();
+      });
+    });
+
+    function setupNavTabs() {
+      const tabs = [
+        { btnId: 'tabBtnDashboard', paneId: 'pane-dashboard' },
+        { btnId: 'tabBtnCopilot', paneId: 'pane-copilot' },
+        { btnId: 'tabBtnOps', paneId: 'pane-ops' }
+      ];
+
+      tabs.forEach(t => {
+        const btn = document.getElementById(t.btnId);
+        if (btn) {
+          btn.addEventListener('click', () => {
+            tabs.forEach(x => {
+              const b = document.getElementById(x.btnId);
+              const p = document.getElementById(x.paneId);
+              if (b) b.classList.toggle('active', x.btnId === t.btnId);
+              if (p) p.classList.toggle('active', x.paneId === t.paneId);
+            });
+          });
+        }
+      });
+    }
+
+    function switchExecTab(tabId) {
+      const btn = document.getElementById(`tabBtn${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`);
+      if (btn) btn.click();
+    }
+
+    function exportExecutiveReport() {
+      window.App.showToast('Relatório Executivo de Produção gerado e exportado com sucesso!', 'success');
+    }
+  </script>
+</body>
+</html>

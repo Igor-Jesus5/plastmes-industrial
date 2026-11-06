@@ -537,3 +537,367 @@
   from { opacity: 0; transform: translateX(40px); }
   to { opacity: 1; transform: translateX(0); }
 }
+
+/* ==========================================================================
+   WIDGET DE BARRAMENTO REAL-TIME INTER-SITES (SYNC-BUS)
+   ========================================================================== */
+
+.peer-sync-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: var(--radius-full);
+  padding: 0.35rem 0.85rem;
+  backdrop-filter: blur(8px);
+  transition: var(--transition-fast);
+}
+
+.peer-sync-container:hover {
+  border-color: rgba(56, 189, 248, 0.6);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+}
+
+.peer-sync-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #38bdf8;
+  letter-spacing: 0.05em;
+}
+
+.peer-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.peer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: var(--transition-fast);
+}
+
+.peer-chip.active {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.4);
+  font-weight: 700;
+}
+
+.peer-chip .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #64748b;
+}
+
+.peer-chip.active .dot {
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  animation: pulseGreen 2s infinite;
+}
+
+/* Barra de Navegação Rápida entre os 3 Sites */
+.multisite-nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #090e18;
+  border-bottom: 1px solid var(--border-medium);
+  padding: 0.5rem 1.5rem;
+  gap: 1rem;
+}
+
+.multisite-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.multisite-links-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.multisite-link-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  transition: var(--transition-fast);
+}
+
+.multisite-link-pill:hover {
+  color: white;
+  background: var(--bg-surface-elevated);
+  border-color: #38bdf8;
+}
+
+.multisite-link-pill.current {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.multisite-link-pill.popout {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  border-color: rgba(168, 85, 247, 0.4);
+}
+.multisite-link-pill.popout:hover {
+  background: rgba(168, 85, 247, 0.25);
+  border-color: #a855f7;
+}
+
+/* Animação de pulso para cartões que receberam atualização em tempo real */
+.live-pulse-update {
+  animation: liveHighlight 1.8s ease-out;
+}
+
+@keyframes liveHighlight {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    border-color: #22c55e;
+  }
+  50% {
+    box-shadow: 0 0 20px 4px rgba(34, 197, 94, 0.4);
+    border-color: #4ade80;
+  }
+  100% {
+    box-shadow: none;
+  }
+}
+
+.live-pulse-alert {
+  animation: liveAlertHighlight 1.8s ease-out;
+}
+
+@keyframes liveAlertHighlight {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8);
+    border-color: #ef4444;
+  }
+  50% {
+    box-shadow: 0 0 25px 6px rgba(239, 68, 68, 0.5);
+    border-color: #f87171;
+  }
+  100% {
+    box-shadow: none;
+  }
+}
+
+/* ==========================================================================
+   LAUNCHPAD & MODO MULTI-TELAS AO VIVO (HUB CENTRAL)
+   ========================================================================== */
+
+.launchpad-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.launchpad-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.launchpad-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+.launchpad-card.card-operador::before { background: linear-gradient(90deg, #22c55e, #10b981); }
+.launchpad-card.card-supervisor::before { background: linear-gradient(90deg, #eab308, #f59e0b); }
+.launchpad-card.card-executivo::before { background: linear-gradient(90deg, #38bdf8, #6366f1); }
+
+.launchpad-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-light);
+  box-shadow: var(--shadow-xl);
+}
+
+.launchpad-card-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.card-operador .launchpad-card-icon { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+.card-supervisor .launchpad-card-icon { background: rgba(234, 179, 8, 0.15); color: #facc15; }
+.card-executivo .launchpad-card-icon { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+
+.launchpad-card h3 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.launchpad-card p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+  flex-grow: 1;
+}
+
+.launchpad-card-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.launchpad-card-features li {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.launchpad-card-features li .check-icon {
+  color: #22c55e;
+}
+
+.launchpad-actions {
+  display: flex;
+  gap: 0.65rem;
+  margin-top: auto;
+}
+
+/* Modo Side-by-Side Multi-Telas no Hub */
+.split-view-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+  height: 85vh;
+  margin-top: 1rem;
+  background: #020617;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  padding: 0.75rem;
+}
+
+@media (max-width: 1400px) {
+  .split-view-container {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+}
+
+.split-view-frame-wrapper {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.split-view-frame-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.85rem;
+  background: #0b1120;
+  border-bottom: 1px solid var(--border-medium);
+}
+
+.split-view-frame-header h4 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.split-view-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #040810;
+  min-height: 600px;
+}
+
+/* Feed de Eventos do Barramento em Tempo Real */
+.realtime-event-ticker {
+  background: #090e18;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 1rem;
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.8rem;
+  overflow: hidden;
+}
+
+.ticker-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 800;
+  color: #38bdf8;
+  white-space: nowrap;
+}
+
+.ticker-feed {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  overflow-x: auto;
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+
+.ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
